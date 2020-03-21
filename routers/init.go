@@ -14,6 +14,7 @@ var (
 	studentService  *api.StudentsModule
 	lecturerService *api.LecturersModule
 	subjectService  *api.SubjectModule
+	semesterService *api.SemestersModule
 )
 
 func Init(db *sql.DB, cache *redis.Pool, log *helpers.Logger) {
@@ -23,4 +24,6 @@ func Init(db *sql.DB, cache *redis.Pool, log *helpers.Logger) {
 	studentService = api.NewStudentsModule(dbPool, cachePool)
 	lecturerService = api.NewLecturersModule(dbPool, cachePool)
 	subjectService = api.NewSubjectsModule(dbPool, cachePool)
+	semesterService = api.NewSemestersModule(dbPool, cachePool)
+
 }

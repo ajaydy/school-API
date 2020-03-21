@@ -82,3 +82,46 @@ func GetOneSemester(ctx context.Context, db *sql.DB, semesterID uuid.UUID) (Seme
 	return semester, nil
 
 }
+
+func GetAllSemester(ctx context.Context, db *sql.DB) ([]SemesterModel, error) {
+
+	query := fmt.Sprintf(`
+		SELECT
+			id,
+			year,
+			month,
+			is_delete,
+			created_by,
+			created_at,
+			updated_by,
+			updated_at
+		FROM semester`)
+
+	rows, err := db.QueryContext(ctx, query)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var semesters []SemesterModel
+	for rows.Next() {
+		var semester SemesterModel
+		rows.Scan(
+			&semester.ID,
+			&semester.Year,
+			&semester.Month,
+			&semester.IsDelete,
+			&semester.CreatedBy,
+			&semester.CreatedAt,
+			&semester.UpdatedBy,
+			&semester.UpdatedAt,
+		)
+
+		semesters = append(semesters, semester)
+	}
+
+	return semesters, nil
+
+}
