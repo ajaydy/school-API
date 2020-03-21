@@ -41,5 +41,8 @@ func InitHandlers() *mux.Router {
 	apiV1.Handle("/students/{id}", HandlerFunc(HandlerStudentsDetail)).Methods(http.MethodGet)
 	apiV1.Handle("/lecturers", HandlerFunc(HandlerLecturers)).Methods(http.MethodGet)
 	apiV1.Handle("/lecturers/{id}", HandlerFunc(HandlerLecturersDetail)).Methods(http.MethodGet)
+	apiV1.Handle("/subjects", HandlerFunc(HandlerSubjects)).Methods(http.MethodGet)
+	apiV1.Handle("/subjects/{id}", HandlerFunc(HandlerSubjectsDetail)).Methods(http.MethodGet)
+
 	return r
 }

@@ -86,3 +86,48 @@ func GetOneSubject(ctx context.Context, db *sql.DB, subjectID uuid.UUID) (Subjec
 	return subject, nil
 
 }
+
+func GetAllSubject(ctx context.Context, db *sql.DB) ([]SubjectModel, error) {
+
+	query := fmt.Sprintf(`
+		SELECT
+			id,
+			name,
+			description,
+			duration,
+			is_delete,
+			created_by,
+			created_at,
+			updated_by,
+			updated_at
+		FROM subject`)
+
+	rows, err := db.QueryContext(ctx, query)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var subjects []SubjectModel
+	for rows.Next() {
+		var subject SubjectModel
+		rows.Scan(
+			&subject.ID,
+			&subject.Name,
+			&subject.Description,
+			&subject.Duration,
+			&subject.IsDelete,
+			&subject.CreatedBy,
+			&subject.CreatedAt,
+			&subject.UpdatedBy,
+			&subject.UpdatedAt,
+		)
+
+		subjects = append(subjects, subject)
+	}
+
+	return subjects, nil
+
+}

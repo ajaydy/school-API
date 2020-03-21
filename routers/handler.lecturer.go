@@ -20,7 +20,7 @@ func HandlerLecturersDetail(w http.ResponseWriter, r *http.Request) (interface{}
 
 	lecturerID, err := uuid.FromString(params["id"])
 	if err != nil {
-		return nil, helpers.ErrorWrap(err, "handler", "HandlerLecturerDetail/parseID", helpers.BadRequestMessage, http.StatusBadRequest)
+		return nil, helpers.ErrorWrap(err, "handler", "HandlerLecturersDetail/parseID", helpers.BadRequestMessage, http.StatusBadRequest)
 	}
 	return lecturerService.Detail(ctx, lecturerID)
 }
