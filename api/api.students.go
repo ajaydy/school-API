@@ -29,7 +29,8 @@ func (s StudentsModule) List(ctx context.Context) (interface{}, *helpers.Error) 
 	students, err := models.GetAllStudent(ctx, s.db)
 
 	if err != nil {
-		return nil, helpers.ErrorWrap(err, s.name, "List/GetAllStudent", helpers.InternalServerError, http.StatusInternalServerError)
+		return nil, helpers.ErrorWrap(err, s.name, "List/GetAllStudent", helpers.InternalServerError,
+			http.StatusInternalServerError)
 	}
 
 	var studentsResponse []models.StudentResponse
@@ -44,7 +45,8 @@ func (s StudentsModule) Detail(ctx context.Context, studentID uuid.UUID) (interf
 	student, err := models.GetOneStudent(ctx, s.db, studentID)
 
 	if err != nil {
-		return nil, helpers.ErrorWrap(err, s.name, "Detail/GetAllStudent", helpers.InternalServerError, http.StatusInternalServerError)
+		return nil, helpers.ErrorWrap(err, s.name, "Detail/GetOneStudent", helpers.InternalServerError,
+			http.StatusInternalServerError)
 	}
 
 	return student.Response(), nil

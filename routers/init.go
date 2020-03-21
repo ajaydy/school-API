@@ -8,10 +8,11 @@ import (
 )
 
 var (
-	dbPool         *sql.DB
-	cachePool      *redis.Pool
-	logger         *helpers.Logger
-	studentService *api.StudentsModule
+	dbPool          *sql.DB
+	cachePool       *redis.Pool
+	logger          *helpers.Logger
+	studentService  *api.StudentsModule
+	lecturerService *api.LecturersModule
 )
 
 func Init(db *sql.DB, cache *redis.Pool, log *helpers.Logger) {
@@ -19,4 +20,5 @@ func Init(db *sql.DB, cache *redis.Pool, log *helpers.Logger) {
 	cachePool = cache
 	logger = log
 	studentService = api.NewStudentsModule(dbPool, cachePool)
+	lecturerService = api.NewLecturersModule(dbPool, cachePool)
 }

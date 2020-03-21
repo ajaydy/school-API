@@ -38,6 +38,8 @@ func InitHandlers() *mux.Router {
 
 	apiV1 := r.PathPrefix("/api/v1").Subrouter()
 	apiV1.Handle("/students", HandlerFunc(HandlerStudents)).Methods(http.MethodGet)
-	apiV1.Handle("/students/{id}", HandlerFunc(HandlerStudents)).Methods(http.MethodGet)
+	apiV1.Handle("/students/{id}", HandlerFunc(HandlerStudentsDetail)).Methods(http.MethodGet)
+	apiV1.Handle("/lecturers", HandlerFunc(HandlerLecturers)).Methods(http.MethodGet)
+	apiV1.Handle("/lecturers/{id}", HandlerFunc(HandlerLecturersDetail)).Methods(http.MethodGet)
 	return r
 }
