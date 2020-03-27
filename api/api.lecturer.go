@@ -11,7 +11,7 @@ import (
 )
 
 type (
-	LecturersModule struct {
+	LecturerModule struct {
 		db     *sql.DB
 		cache  *redis.Pool
 		name   string
@@ -36,11 +36,12 @@ type (
 	//}
 )
 
-func NewLecturersModule(db *sql.DB, cache *redis.Pool) *LecturersModule {
-	return &LecturersModule{
-		db:    db,
-		cache: cache,
-		name:  "module/lecturers",
+func NewLecturerModule(db *sql.DB, cache *redis.Pool, logger *helpers.Logger) *LecturerModule {
+	return &LecturerModule{
+		db:     db,
+		cache:  cache,
+		name:   "module/lecturer",
+		logger: logger,
 	}
 }
 
@@ -60,8 +61,8 @@ func NewLecturersModule(db *sql.DB, cache *redis.Pool) *LecturersModule {
 //	return lecturerResponse, nil
 //}
 
-func (s LecturersModule) Detail(ctx context.Context, studentID uuid.UUID) (interface{}, *helpers.Error) {
-	lecturer, err := models.GetOneLecturer(ctx, s.db, studentID)
+func (s LecturerModule) Detail(ctx context.Context, param LecturerDetailParam) (interface{}, *helpers.Error) {
+	lecturer, err := models.GetOneLecturer(ctx, s.db, param.ID)
 
 	if err != nil {
 		return nil, helpers.ErrorWrap(err, s.name, "Detail/GetOneLecturer", helpers.InternalServerError,

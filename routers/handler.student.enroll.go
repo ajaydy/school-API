@@ -4,6 +4,7 @@ import (
 	"github.com/gorilla/mux"
 	uuid "github.com/satori/go.uuid"
 	"net/http"
+	"school/api"
 	"school/helpers"
 )
 
@@ -17,5 +18,8 @@ func HandlerStudentEnrollDetail(w http.ResponseWriter, r *http.Request) (interfa
 		return nil, helpers.ErrorWrap(err, "handler", "HandlerStudentEnrollDetail/parseID",
 			helpers.BadRequestMessage, http.StatusBadRequest)
 	}
-	return studentService.Detail(ctx, studentEnrollID)
+
+	param := api.StudentEnrollDetailParam{ID: studentEnrollID}
+
+	return studentEnrollService.Detail(ctx, param)
 }

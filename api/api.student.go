@@ -11,7 +11,7 @@ import (
 )
 
 type (
-	StudentsModule struct {
+	StudentModule struct {
 		db     *sql.DB
 		cache  *redis.Pool
 		name   string
@@ -64,11 +64,12 @@ type (
 	//}
 )
 
-func NewStudentsModule(db *sql.DB, cache *redis.Pool) *StudentsModule {
-	return &StudentsModule{
-		db:    db,
-		cache: cache,
-		name:  "module/students",
+func NewStudentModule(db *sql.DB, cache *redis.Pool, logger *helpers.Logger) *StudentModule {
+	return &StudentModule{
+		db:     db,
+		cache:  cache,
+		name:   "module/student",
+		logger: logger,
 	}
 
 }
@@ -184,8 +185,8 @@ func NewStudentsModule(db *sql.DB, cache *redis.Pool) *StudentsModule {
 //	return studentsResponse, nil
 //}
 
-func (s StudentsModule) Detail(ctx context.Context, studentID uuid.UUID) (interface{}, *helpers.Error) {
-	student, err := models.GetOneStudent(ctx, s.db, studentID)
+func (s StudentModule) Detail(ctx context.Context, param StudentDetailParam) (interface{}, *helpers.Error) {
+	student, err := models.GetOneStudent(ctx, s.db, param.ID)
 
 	if err != nil {
 		return nil, helpers.ErrorWrap(err, s.name, "Detail/GetOneStudent", helpers.InternalServerError,

@@ -23,22 +23,30 @@ type (
 	}
 )
 
-func NewStudentEnrollModule(db *sql.DB, cache *redis.Pool) *StudentEnrollModule {
+func NewStudentEnrollModule(db *sql.DB, cache *redis.Pool, logger *helpers.Logger) *StudentEnrollModule {
 	return &StudentEnrollModule{
-		db:    db,
-		cache: cache,
-		name:  "module/studentEnroll",
+		db:     db,
+		cache:  cache,
+		name:   "module/studentEnroll",
+		logger: logger,
 	}
 
 }
 
-func (s StudentEnrollModule) Detail(ctx context.Context, studentEnrollID uuid.UUID) (interface{}, *helpers.Error) {
-	student, err := models.GetOneStudentEnroll(ctx, s.db, studentEnrollID)
+func (s StudentEnrollModule) Detail(ctx context.Context, param StudentEnrollDetailParam) (interface{}, *helpers.Error) {
+	student, err := models.GetOneStudentEnroll(ctx, s.db, param.ID)
 
 	if err != nil {
 		return nil, helpers.ErrorWrap(err, s.name, "Detail/GetOneStudentEnroll", helpers.InternalServerError,
 			http.StatusInternalServerError)
 	}
 
-	return student.Response(ctx, s.db, s.logger), nil
+	response, err := student.Response(ctx, s.db, s.logger)
+
+	if err != nil {
+		return nil, helpers.ErrorWrap(err, s.name, "Detail/StudentEnrollResponse", helpers.InternalServerError,
+			http.StatusInternalServerError)
+	}
+
+	return response, nil
 }

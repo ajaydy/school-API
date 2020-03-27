@@ -11,21 +11,33 @@ var (
 	dbPool               *sql.DB
 	cachePool            *redis.Pool
 	logger               *helpers.Logger
-	studentService       *api.StudentsModule
-	lecturerService      *api.LecturersModule
+	studentService       *api.StudentModule
+	lecturerService      *api.LecturerModule
 	subjectService       *api.SubjectModule
 	intakeService        *api.IntakeModule
-	studentenrollService *api.StudentEnrollModule
+	studentEnrollService *api.StudentEnrollModule
+	attendanceService    *api.AttendanceModule
+	classroomService     *api.ClassroomModule
+	facultyService       *api.FacultyModule
+	programService       *api.ProgramModule
+	resultService        *api.ResultModule
+	sessionService       *api.SessionModule
 )
 
 func Init(db *sql.DB, cache *redis.Pool, log *helpers.Logger) {
 	dbPool = db
 	cachePool = cache
 	logger = log
-	studentService = api.NewStudentsModule(dbPool, cachePool)
-	lecturerService = api.NewLecturersModule(dbPool, cachePool)
-	subjectService = api.NewSubjectsModule(dbPool, cachePool)
-	intakeService = api.NewIntakesModule(dbPool, cachePool)
-	studentenrollService = api.NewStudentEnrollModule(dbPool, cachePool)
+	studentService = api.NewStudentModule(dbPool, cachePool, logger)
+	lecturerService = api.NewLecturerModule(dbPool, cachePool, logger)
+	subjectService = api.NewSubjectModule(dbPool, cachePool, logger)
+	intakeService = api.NewIntakeModule(dbPool, cachePool, logger)
+	studentEnrollService = api.NewStudentEnrollModule(dbPool, cachePool, logger)
+	attendanceService = api.NewAttendanceModule(dbPool, cachePool, logger)
+	classroomService = api.NewClassroomModule(dbPool, cachePool, logger)
+	facultyService = api.NewFacultyModule(dbPool, cachePool, logger)
+	programService = api.NewProgramModule(dbPool, cachePool, logger)
+	resultService = api.NewResultModule(dbPool, cachePool, logger)
+	sessionService = api.NewSessionModule(dbPool, cachePool, logger)
 
 }

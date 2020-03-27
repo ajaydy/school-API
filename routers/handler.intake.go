@@ -8,11 +8,11 @@ import (
 	"school/helpers"
 )
 
-func HandlerIntake(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
-	ctx := r.Context()
-
-	return intakeService.List(ctx)
-}
+//func HandlerIntake(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
+//	ctx := r.Context()
+//
+//	return intakeService.List(ctx)
+//}
 
 func HandlerIntakeDetail(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
 	ctx := r.Context()
@@ -23,49 +23,52 @@ func HandlerIntakeDetail(w http.ResponseWriter, r *http.Request) (interface{}, *
 	if err != nil {
 		return nil, helpers.ErrorWrap(err, "handler", "HandlerIntakeDetail/parseID", helpers.BadRequestMessage, http.StatusBadRequest)
 	}
-	return intakeService.Detail(ctx, intakeID)
+
+	param := api.IntakeDetailParam{ID: intakeID}
+
+	return intakeService.Detail(ctx, param)
 }
 
-func HandlerAddIntake(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
-
-	ctx := r.Context()
-
-	var param api.IntakeParamAdd
-
-	err := helpers.ParsePOSTRequestData(ctx, r, &param)
-	if err != nil {
-		return nil, helpers.ErrorWrap(err, "handler", "HandlerAddIntake/ParsePOSTRequestData",
-			helpers.BadRequestMessage, http.StatusBadRequest)
-
-	}
-
-	return intakeService.Add(ctx, param)
-}
-
-func HandlerUpdateIntake(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
-
-	ctx := r.Context()
-
-	params := mux.Vars(r)
-
-	intakeID, err := uuid.FromString(params["id"])
-
-	if err != nil {
-		return nil, helpers.ErrorWrap(err, "handler", "HandlersUpdateIntake/parseID",
-			helpers.BadRequestMessage, http.StatusBadRequest)
-	}
-
-	var param api.IntakeParamUpdate
-
-	err = helpers.ParsePOSTRequestData(ctx, r, &param)
-	if err != nil {
-
-		return nil, helpers.ErrorWrap(err, "handler", "HandlerUpdateIntake/ParsePOSTRequestData",
-			helpers.BadRequestMessage, http.StatusBadRequest)
-
-	}
-
-	param.ID = intakeID
-
-	return intakeService.Update(ctx, param)
-}
+//func HandlerAddIntake(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
+//
+//	ctx := r.Context()
+//
+//	var param api.IntakeParamAdd
+//
+//	err := helpers.ParsePOSTRequestData(ctx, r, &param)
+//	if err != nil {
+//		return nil, helpers.ErrorWrap(err, "handler", "HandlerAddIntake/ParsePOSTRequestData",
+//			helpers.BadRequestMessage, http.StatusBadRequest)
+//
+//	}
+//
+//	return intakeService.Add(ctx, param)
+//}
+//
+//func HandlerUpdateIntake(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
+//
+//	ctx := r.Context()
+//
+//	params := mux.Vars(r)
+//
+//	intakeID, err := uuid.FromString(params["id"])
+//
+//	if err != nil {
+//		return nil, helpers.ErrorWrap(err, "handler", "HandlersUpdateIntake/parseID",
+//			helpers.BadRequestMessage, http.StatusBadRequest)
+//	}
+//
+//	var param api.IntakeParamUpdate
+//
+//	err = helpers.ParsePOSTRequestData(ctx, r, &param)
+//	if err != nil {
+//
+//		return nil, helpers.ErrorWrap(err, "handler", "HandlerUpdateIntake/ParsePOSTRequestData",
+//			helpers.BadRequestMessage, http.StatusBadRequest)
+//
+//	}
+//
+//	param.ID = intakeID
+//
+//	return intakeService.Update(ctx, param)
+//}

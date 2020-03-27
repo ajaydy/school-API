@@ -34,11 +34,12 @@ type (
 //	}
 )
 
-func NewIntakesModule(db *sql.DB, cache *redis.Pool) *IntakeModule {
+func NewIntakeModule(db *sql.DB, cache *redis.Pool, logger *helpers.Logger) *IntakeModule {
 	return &IntakeModule{
-		db:    db,
-		cache: cache,
-		name:  "module/intakes",
+		db:     db,
+		cache:  cache,
+		name:   "module/intake",
+		logger: logger,
 	}
 }
 
@@ -58,8 +59,8 @@ func NewIntakesModule(db *sql.DB, cache *redis.Pool) *IntakeModule {
 //	return intakeResponse, nil
 //}
 
-func (s IntakeModule) Detail(ctx context.Context, intakeID uuid.UUID) (interface{}, *helpers.Error) {
-	intake, err := models.GetOneIntake(ctx, s.db, intakeID)
+func (s IntakeModule) Detail(ctx context.Context, param IntakeDetailParam) (interface{}, *helpers.Error) {
+	intake, err := models.GetOneIntake(ctx, s.db, param.ID)
 
 	if err != nil {
 		return nil, helpers.ErrorWrap(err, s.name, "Detail/GetOneIntake", helpers.InternalServerError,

@@ -12,9 +12,10 @@ import (
 
 type (
 	SubjectModule struct {
-		db    *sql.DB
-		cache *redis.Pool
-		name  string
+		db     *sql.DB
+		cache  *redis.Pool
+		name   string
+		logger *helpers.Logger
 	}
 
 	SubjectDetailParam struct {
@@ -36,11 +37,12 @@ type (
 //	}
 )
 
-func NewSubjectsModule(db *sql.DB, cache *redis.Pool) *SubjectModule {
+func NewSubjectModule(db *sql.DB, cache *redis.Pool, logger *helpers.Logger) *SubjectModule {
 	return &SubjectModule{
-		db:    db,
-		cache: cache,
-		name:  "module/subjects",
+		db:     db,
+		cache:  cache,
+		name:   "module/subject",
+		logger: logger,
 	}
 }
 
@@ -61,7 +63,7 @@ func NewSubjectsModule(db *sql.DB, cache *redis.Pool) *SubjectModule {
 //}
 
 func (s SubjectModule) Detail(ctx context.Context, param SubjectDetailParam) (interface{}, *helpers.Error) {
-	subject, err := models.GetOneSubject(ctx, s.db, subjectID)
+	subject, err := models.GetOneSubject(ctx, s.db, param.ID)
 
 	if err != nil {
 		return nil, helpers.ErrorWrap(err, s.name, "Detail/GetOneSubject", helpers.InternalServerError,
