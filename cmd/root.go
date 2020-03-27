@@ -12,6 +12,7 @@ import (
 	"os/signal"
 	"school/api"
 	"school/helpers"
+	"school/middleware"
 	"school/routers"
 	"syscall"
 	"time"
@@ -35,8 +36,9 @@ var rootCmd = &cobra.Command{
 		initCache()
 		initLogger()
 		api.Init(dbPool, cachePool, logger)
-		helpers.Init(logger)
+		helpers.Init(logger, cachePool)
 		routers.Init(dbPool, cachePool, logger)
+		middleware.Init(dbPool, cachePool, logger)
 
 	},
 

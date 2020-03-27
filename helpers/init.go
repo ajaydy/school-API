@@ -1,9 +1,13 @@
 package helpers
 
+import "github.com/gomodule/redigo/redis"
+
 var (
-	logger *Logger
+	logger    *Logger
+	cachePool *redis.Pool
 )
 
-func Init(log *Logger) {
+func Init(log *Logger, cache *redis.Pool) {
 	logger = log
+	cachePool = cache
 }

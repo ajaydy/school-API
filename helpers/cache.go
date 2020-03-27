@@ -1,8 +1,10 @@
 package helpers
 
 import (
+	"context"
 	"fmt"
 	"github.com/gomodule/redigo/redis"
+	"strconv"
 	"time"
 )
 
@@ -52,4 +54,112 @@ func ConnectToCache(cacheOptions CacheOptions) *redis.Pool {
 		return pool
 	}
 	return pool
+}
+
+func SetDataToCache(ctx context.Context, id, value string) error {
+	conn, err := cachePool.Dial()
+
+	if err != nil {
+		return err
+	}
+
+	_, err = conn.Do("SET", id, value)
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+func SetDataToCacheWithExpiry(ctx context.Context, id, value string, expiryTime int) error {
+	conn, err := cachePool.Dial()
+
+	if err != nil {
+		return err
+	}
+
+	_, err = conn.Do("SETEX", id, strconv.Itoa(expiryTime), value)
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+func GetDataFromCache(ctx context.Context, id string) (string, error) {
+	conn, err := cachePool.Dial()
+
+	if err != nil {
+		return "", err
+	}
+
+	data, err := redis.String(conn.Do("GET", id))
+	if err != nil {
+		return "", err
+	}
+
+	return data, nil
+
+}
+
+func GetKeysFromCache(ctx context.Context) ([]string, error) {
+	conn, err := cachePool.Dial()
+
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := redis.Strings(conn.Do("KEYS", "*"))
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
+
+}
+
+func GetKeysFromCacheWithPrefix(ctx context.Context, prefix string) ([]string, error) {
+	conn, err := cachePool.Dial()
+
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := redis.Strings(conn.Do("KEYS", fmt.Sprintf(`%s*`, prefix)))
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
+
+}
+
+func SetCacheExpiry(ctx context.Context, id string, expiryTime int) error {
+	conn, err := cachePool.Dial()
+
+	if err != nil {
+		return err
+	}
+	_, err = conn.Do("EXPIRE", id, strconv.Itoa(expiryTime))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func DeleteCache(ctx context.Context, id string) error {
+	conn, err := cachePool.Dial()
+
+	if err != nil {
+		return err
+	}
+	_, err = conn.Do("DEL", id)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

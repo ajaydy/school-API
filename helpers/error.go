@@ -1,6 +1,10 @@
 package helpers
 
-import "github.com/pkg/errors"
+import (
+	"encoding/json"
+	"github.com/pkg/errors"
+	"net/http"
+)
 
 type (
 	Error struct {
@@ -23,7 +27,27 @@ func ErrorWrap(err error, prefix, suffix, message string, status int) *Error {
 	}
 }
 
+func ErrorResponse(w http.ResponseWriter, message string, status int) {
+	resp := Response{
+		Data: nil,
+		BaseResponse: BaseResponse{
+			Errors: []string{
+				message,
+			},
+		},
+	}
+	w.WriteHeader(status)
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(&resp); err != nil {
+		return
+	}
+}
+
 const (
-	InternalServerError = "Internal Server Error"
-	BadRequestMessage   = "Bad Request"
+	InternalServerError      = "Internal Server Error"
+	BadRequestMessage        = "Bad Request"
+	UnauthorizedMessage      = "Unauthorized"
+	IncorrectEmailMessage    = "Incorrect Email"
+	IncorrectPasswordMessage = "Incorrect Password"
+	ForbiddenMessage         = "Forbidden Message"
 )
