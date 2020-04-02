@@ -93,7 +93,7 @@ func GetAllSubject(ctx context.Context, db *sql.DB, filter helpers.Filter) ([]Su
 	var searchQuery string
 
 	if filter.Search != "" {
-		searchQuery = fmt.Sprintf(`WHERE LOWER(name) LIKE LOWER('%%%s%%')`, filter.Search)
+		searchQuery = fmt.Sprintf(`AND LOWER(name) LIKE LOWER('%%%s%%')`, filter.Search)
 	}
 
 	query := fmt.Sprintf(`
@@ -107,7 +107,8 @@ func GetAllSubject(ctx context.Context, db *sql.DB, filter helpers.Filter) ([]Su
 			created_at,
 			updated_by,
 			updated_at
-		FROM subject
+		FROM subject	
+		WHERE is_delete = false
 		%s
 		ORDER BY name  %s
 		LIMIT $1 OFFSET $2`, searchQuery, filter.Dir)
@@ -168,29 +169,48 @@ func (s *SubjectModel) Insert(ctx context.Context, db *sql.DB) error {
 
 }
 
-//
-//func (s *SubjectModel) Update(ctx context.Context, db *sql.DB) error {
-//
-//	query := fmt.Sprintf(`
-//		UPDATE subject
-//		SET
-//			"name"=$1,
-//			"description"=$2,
-//			duration=$3,
-//			updated_at=NOW(),
-//			updated_by=$4
-//		WHERE id=$5
-//		RETURNING id,created_at`)
-//
-//	err := db.QueryRowContext(ctx, query,
-//		s.Name, s.Description, s.Duration, s.UpdatedBy, s.ID).Scan(
-//		&s.ID, &s.CreatedAt,
-//	)
-//
-//	if err != nil {
-//		return err
-//	}
-//
-//	return nil
-//
-//}
+func (s *SubjectModel) Update(ctx context.Context, db *sql.DB) error {
+
+	query := fmt.Sprintf(`
+		UPDATE subject
+		SET
+			name=$1,
+			description=$2,
+			duration=$3,
+			updated_at=NOW(),
+			updated_by=$4
+		WHERE id=$5
+		RETURNING id,created_at,updated_at,created_by,is_delete`)
+
+	err := db.QueryRowContext(ctx, query,
+		s.Name, s.Description, s.Duration, s.UpdatedBy, s.ID).Scan(
+		&s.ID, &s.CreatedAt, &s.UpdatedAt, &s.CreatedBy, &s.IsDelete,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+func (s *SubjectModel) Delete(ctx context.Context, db *sql.DB) error {
+
+	query := fmt.Sprintf(`
+		UPDATE subject
+		SET
+			is_delete=true,
+			updated_by=$1,
+			updated_at=NOW()
+		WHERE id=$2`)
+
+	_, err := db.ExecContext(ctx, query,
+		s.UpdatedBy, s.ID)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

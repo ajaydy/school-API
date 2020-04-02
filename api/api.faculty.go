@@ -59,12 +59,12 @@ func (s FacultyModule) List(ctx context.Context, filter helpers.Filter) (interfa
 			http.StatusInternalServerError)
 	}
 
-	var facultyResponses []models.FacultyResponse
+	var facultiesResponse []models.FacultyResponse
 	for _, faculty := range faculties {
-		facultyResponses = append(facultyResponses, faculty.Response())
+		facultiesResponse = append(facultiesResponse, faculty.Response())
 	}
 
-	return facultyResponses, nil
+	return facultiesResponse, nil
 }
 
 func (s FacultyModule) Detail(ctx context.Context, param FacultyDetailParam) (interface{}, *helpers.Error) {

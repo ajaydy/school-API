@@ -101,6 +101,64 @@ func GetOneClassroom(ctx context.Context, db *sql.DB, classroomID uuid.UUID) (Cl
 
 }
 
+func GetAllClassroom(ctx context.Context, db *sql.DB, filter helpers.Filter) ([]ClassRoomModel, error) {
+
+	var searchQuery string
+
+	if filter.Search != "" {
+		searchQuery = fmt.Sprintf(`AND LOWER(name) LIKE LOWER('%%%s%%')`, filter.Search)
+	}
+
+	query := fmt.Sprintf(`
+		SELECT
+			id,
+			faculty_id,
+			floor,
+			room_no,
+			code,
+			is_delete,
+			created_by,
+			created_at,
+			updated_by,
+			updated_at
+		FROM classroom
+		WHERE is_delete = false 
+		%s
+		ORDER BY floor %s ,room_no  %s
+		LIMIT $1 OFFSET $2`, searchQuery, filter.Dir, filter.Dir)
+
+	rows, err := db.QueryContext(ctx, query, filter.Limit, filter.Offset)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var classrooms []ClassRoomModel
+	for rows.Next() {
+		var classroom ClassRoomModel
+
+		rows.Scan(
+			&classroom.ID,
+			&classroom.FacultyID,
+			&classroom.Floor,
+			&classroom.RoomNo,
+			&classroom.Code,
+			&classroom.IsDelete,
+			&classroom.CreatedBy,
+			&classroom.CreatedAt,
+			&classroom.UpdatedBy,
+			&classroom.UpdatedAt,
+		)
+
+		classrooms = append(classrooms, classroom)
+	}
+
+	return classrooms, nil
+
+}
+
 func (s *ClassRoomModel) Insert(ctx context.Context, db *sql.DB) error {
 
 	query := fmt.Sprintf(`
@@ -126,4 +184,51 @@ func (s *ClassRoomModel) Insert(ctx context.Context, db *sql.DB) error {
 
 	return nil
 
+}
+
+func (s *ClassRoomModel) Update(ctx context.Context, db *sql.DB) error {
+
+	query := fmt.Sprintf(`
+		UPDATE classroom
+		SET
+			faculty_id=$1,
+			floor=$2,
+			room_no=$3,
+			code=$4,
+			updated_at=NOW(),
+			updated_by=$5
+		WHERE id=$6
+		RETURNING id,created_at,updated_at,created_by,is_delete`)
+
+	err := db.QueryRowContext(ctx, query,
+		s.FacultyID, s.Floor, s.RoomNo, s.Code, s.UpdatedBy, s.ID).Scan(
+		&s.ID, &s.CreatedAt, &s.UpdatedAt, &s.CreatedBy, &s.IsDelete,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+func (s *ClassRoomModel) Delete(ctx context.Context, db *sql.DB) error {
+
+	query := fmt.Sprintf(`
+		UPDATE classroom
+		SET
+			is_delete=true,
+			updated_by=$1,
+			updated_at=NOW()
+		WHERE id=$2`)
+
+	_, err := db.ExecContext(ctx, query,
+		s.UpdatedBy, s.ID)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

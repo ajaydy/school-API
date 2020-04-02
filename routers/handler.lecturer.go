@@ -33,7 +33,7 @@ func HandlerLecturerDetail(w http.ResponseWriter, r *http.Request) (interface{},
 	return lecturerService.Detail(ctx, param)
 }
 
-func HandlerLoginLecturer(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
+func HandlerLecturerLogin(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
 
 	ctx := r.Context()
 

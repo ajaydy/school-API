@@ -8,7 +8,7 @@ import (
 	"school/helpers"
 )
 
-func HandlerStudent(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
+func HandlerStudentList(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
 	ctx := r.Context()
 	filter, err := helpers.ParseFilter(ctx, r)
 	if err != nil {
@@ -34,7 +34,7 @@ func HandlerStudentDetail(w http.ResponseWriter, r *http.Request) (interface{}, 
 	return studentService.Detail(ctx, param)
 }
 
-func HandlerAddStudent(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
+func HandlerStudentAdd(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
 
 	ctx := r.Context()
 
@@ -50,7 +50,7 @@ func HandlerAddStudent(w http.ResponseWriter, r *http.Request) (interface{}, *he
 	return studentService.Add(ctx, param)
 }
 
-func HandlerUpdateStudent(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
+func HandlerStudentUpdate(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
 
 	ctx := r.Context()
 
@@ -95,7 +95,7 @@ func HandlerUpdateStudent(w http.ResponseWriter, r *http.Request) (interface{}, 
 //	return studentService.Register(ctx, param)
 //}
 //
-func HandlerLoginStudent(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
+func HandlerStudentLogin(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
 
 	ctx := r.Context()
 

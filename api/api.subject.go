@@ -22,19 +22,22 @@ type (
 		ID uuid.UUID `json:"id"`
 	}
 
-	SubjectParamAdd struct {
-		Name        string `json:"name" valid:"length(3|50),required"`
+	SubjectAddParam struct {
+		Name        string `json:"name" valid:"required"`
 		Description string `json:"description" valid:"required"`
 		Duration    int    `json:"duration" valid:"required"`
 	}
 
-//
-//	SubjectParamUpdate struct {
-//		ID          uuid.UUID `json:"id"`
-//		Name        string    `json:"name" valid:"length(3|50),required"`
-//		Description string    `json:"description" valid:"required"`
-//		Duration    int       `json:"duration" valid:"required"`
-//	}
+	SubjectUpdateParam struct {
+		ID          uuid.UUID `json:"id"`
+		Name        string    `json:"name" valid:"required"`
+		Description string    `json:"description" valid:"required"`
+		Duration    int       `json:"duration" valid:"required"`
+	}
+
+	SubjectDeleteParam struct {
+		ID uuid.UUID `json:"id"`
+	}
 )
 
 func NewSubjectModule(db *sql.DB, cache *redis.Pool, logger *helpers.Logger) *SubjectModule {
@@ -46,21 +49,21 @@ func NewSubjectModule(db *sql.DB, cache *redis.Pool, logger *helpers.Logger) *Su
 	}
 }
 
-//func (s SubjectModule) List(ctx context.Context, filter helpers.Filter) (interface{}, *helpers.Error) {
-//	subjects, err := models.GetAllSubject(ctx, s.db, filter)
-//
-//	if err != nil {
-//		return nil, helpers.ErrorWrap(err, s.name, "List/GetAllSubject", helpers.InternalServerError,
-//			http.StatusInternalServerError)
-//	}
-//
-//	var subjectResponse []models.SubjectResponse
-//	for _, subject := range subjects {
-//		subjectResponse = append(subjectResponse, subject.Response())
-//	}
-//
-//	return subjectResponse, nil
-//}
+func (s SubjectModule) List(ctx context.Context, filter helpers.Filter) (interface{}, *helpers.Error) {
+	subjects, err := models.GetAllSubject(ctx, s.db, filter)
+
+	if err != nil {
+		return nil, helpers.ErrorWrap(err, s.name, "List/GetAllSubject", helpers.InternalServerError,
+			http.StatusInternalServerError)
+	}
+
+	var subjectsResponse []models.SubjectResponse
+	for _, subject := range subjects {
+		subjectsResponse = append(subjectsResponse, subject.Response())
+	}
+
+	return subjectsResponse, nil
+}
 
 func (s SubjectModule) Detail(ctx context.Context, param SubjectDetailParam) (interface{}, *helpers.Error) {
 	subject, err := models.GetOneSubject(ctx, s.db, param.ID)
@@ -73,41 +76,62 @@ func (s SubjectModule) Detail(ctx context.Context, param SubjectDetailParam) (in
 	return subject.Response(), nil
 }
 
-func (s SubjectModule) Add(ctx context.Context, param SubjectParamAdd) (interface{}, *helpers.Error) {
-	subjects := models.SubjectModel{
+func (s SubjectModule) Add(ctx context.Context, param SubjectAddParam) (interface{}, *helpers.Error) {
+	subject := models.SubjectModel{
 		Name:        param.Name,
 		Description: param.Description,
 		Duration:    param.Duration,
 		CreatedBy:   uuid.FromStringOrNil(ctx.Value("user_id").(string)),
 	}
 
-	err := subjects.Insert(ctx, s.db)
+	err := subject.Insert(ctx, s.db)
 	if err != nil {
 		return nil, helpers.ErrorWrap(err, s.name, "Add/Insert", helpers.InternalServerError,
 			http.StatusInternalServerError)
 	}
 
-	return subjects.Response(), nil
+	return subject.Response(), nil
 }
 
-//func (s SubjectModule) Update(ctx context.Context, param SubjectParamUpdate) (interface{}, *helpers.Error) {
-//
-//	subject := models.SubjectModel{
-//		ID:          param.ID,
-//		Name:        param.Name,
-//		Description: param.Description,
-//		Duration:    param.Duration,
-//		UpdatedBy: uuid.NullUUID{
-//			UUID:  uuid.FromStringOrNil(ctx.Value("user_id").(string)),
-//			Valid: true,
-//		},
-//	}
-//	err := subject.Update(ctx, s.db)
-//	if err != nil {
-//		return nil, helpers.ErrorWrap(err, s.name, "Update/Update", helpers.InternalServerError,
-//			http.StatusInternalServerError)
-//	}
-//
-//	return subject.Response(), nil
-//
-//}
+func (s SubjectModule) Update(ctx context.Context, param SubjectUpdateParam) (interface{}, *helpers.Error) {
+
+	subject := models.SubjectModel{
+		ID:          param.ID,
+		Name:        param.Name,
+		Description: param.Description,
+		Duration:    param.Duration,
+		UpdatedBy: uuid.NullUUID{
+			UUID:  uuid.FromStringOrNil(ctx.Value("user_id").(string)),
+			Valid: true,
+		},
+	}
+
+	err := subject.Update(ctx, s.db)
+	if err != nil {
+		return nil, helpers.ErrorWrap(err, s.name, "Update/Update", helpers.InternalServerError,
+			http.StatusInternalServerError)
+	}
+
+	return subject.Response(), nil
+
+}
+
+func (s SubjectModule) Delete(ctx context.Context, param SubjectDeleteParam) (interface{}, *helpers.Error) {
+
+	subject := models.SubjectModel{
+		ID: param.ID,
+		UpdatedBy: uuid.NullUUID{
+			UUID:  uuid.FromStringOrNil(ctx.Value("user_id").(string)),
+			Valid: true,
+		},
+	}
+
+	err := subject.Delete(ctx, s.db)
+	if err != nil {
+		return nil, helpers.ErrorWrap(err, s.name, "Delete/Delete", helpers.InternalServerError,
+			http.StatusInternalServerError)
+	}
+
+	return nil, nil
+
+}

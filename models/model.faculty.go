@@ -99,7 +99,7 @@ func GetAllFaculty(ctx context.Context, db *sql.DB, filter helpers.Filter) ([]Fa
 	var searchQuery string
 
 	if filter.Search != "" {
-		searchQuery = fmt.Sprintf(`WHERE LOWER(name) LIKE LOWER('%%%s%%')`, filter.Search)
+		searchQuery = fmt.Sprintf(`AND LOWER(name) LIKE LOWER('%%%s%%')`, filter.Search)
 	}
 
 	query := fmt.Sprintf(`
@@ -115,6 +115,7 @@ func GetAllFaculty(ctx context.Context, db *sql.DB, filter helpers.Filter) ([]Fa
 			updated_by,
 			updated_at
 		FROM faculty
+		WHERE is_delete = false
 		%s
 		ORDER BY name  %s
 		LIMIT $1 OFFSET $2`, searchQuery, filter.Dir)
