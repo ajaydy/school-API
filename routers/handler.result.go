@@ -23,3 +23,13 @@ func HandlerResultDetail(w http.ResponseWriter, r *http.Request) (interface{}, *
 
 	return resultService.Detail(ctx, param)
 }
+
+func HandlerResult(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
+	ctx := r.Context()
+	filter, err := helpers.ParseFilter(ctx, r)
+	if err != nil {
+		return nil, helpers.ErrorWrap(err, "handler", "HandlerResult/parseFilter",
+			helpers.BadRequestMessage, http.StatusBadRequest)
+	}
+	return resultService.List(ctx, filter)
+}

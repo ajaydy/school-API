@@ -8,11 +8,11 @@ import (
 	"school/helpers"
 )
 
-//func HandlerIntake(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
-//	ctx := r.Context()
-//
-//	return intakeService.List(ctx)
-//}
+func HandlerIntake(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
+	ctx := r.Context()
+
+	return intakeService.List(ctx)
+}
 
 func HandlerIntakeDetail(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
 	ctx := r.Context()
@@ -35,9 +35,9 @@ func HandlerIntakeDetail(w http.ResponseWriter, r *http.Request) (interface{}, *
 //
 //	var param api.IntakeParamAdd
 //
-//	err := helpers.ParsePOSTRequestData(ctx, r, &param)
+//	err := helpers.ParseBodyRequestData(ctx, r, &param)
 //	if err != nil {
-//		return nil, helpers.ErrorWrap(err, "handler", "HandlerAddIntake/ParsePOSTRequestData",
+//		return nil, helpers.ErrorWrap(err, "handler", "HandlerAddIntake/ParseBodyRequestData",
 //			helpers.BadRequestMessage, http.StatusBadRequest)
 //
 //	}
@@ -60,10 +60,10 @@ func HandlerIntakeDetail(w http.ResponseWriter, r *http.Request) (interface{}, *
 //
 //	var param api.IntakeParamUpdate
 //
-//	err = helpers.ParsePOSTRequestData(ctx, r, &param)
+//	err = helpers.ParseBodyRequestData(ctx, r, &param)
 //	if err != nil {
 //
-//		return nil, helpers.ErrorWrap(err, "handler", "HandlerUpdateIntake/ParsePOSTRequestData",
+//		return nil, helpers.ErrorWrap(err, "handler", "HandlerUpdateIntake/ParseBodyRequestData",
 //			helpers.BadRequestMessage, http.StatusBadRequest)
 //
 //	}

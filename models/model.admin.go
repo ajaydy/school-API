@@ -19,9 +19,28 @@ type (
 		UpdatedBy uuid.NullUUID
 		UpdatedAt pq.NullTime
 	}
+	AdminResponse struct {
+		ID        uuid.UUID `json:"id"`
+		Username  string    `json:"username"`
+		CreatedBy uuid.UUID `json:"created_by"`
+		CreatedAt time.Time `json:"created_at"`
+		UpdatedBy uuid.UUID `json:"updated_by"`
+		UpdatedAt time.Time `json:"updated_at"`
+	}
 )
 
-func GetOneUserByUsername(ctx context.Context, db *sql.DB, username string) (AdminModel, error) {
+func (s AdminModel) Response() AdminResponse {
+	return AdminResponse{
+		ID:        s.ID,
+		Username:  s.Username,
+		CreatedBy: s.CreatedBy,
+		CreatedAt: s.CreatedAt,
+		UpdatedBy: s.UpdatedBy.UUID,
+		UpdatedAt: s.UpdatedAt.Time,
+	}
+}
+
+func GetOneAdminByUsername(ctx context.Context, db *sql.DB, username string) (AdminModel, error) {
 
 	query := fmt.Sprintf(`
 		SELECT

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"github.com/asaskevich/govalidator"
 	"github.com/gorilla/schema"
+	uuid "github.com/satori/go.uuid"
 	"html"
 	"net/http"
 	"reflect"
@@ -23,11 +24,14 @@ type (
 	}
 
 	Filter struct {
-		FilterOption `json:"filter,omitempty"`
+		FilterOption    `json:"filter,omitempty"`
+		SessionID       uuid.UUID `json:"session_id" schema:"session_id"`
+		StudentEnrollID uuid.UUID `json:"student_enroll_id" schema:"student_enroll_id"`
+		ClassID         uuid.UUID `json:"class_id"schema:"class_id"`
 	}
 )
 
-func ParsePOSTRequestData(ctx context.Context, r *http.Request, data interface{}) error {
+func ParseBodyRequestData(ctx context.Context, r *http.Request, data interface{}) error {
 	err := json.NewDecoder(r.Body).Decode(&data)
 	if err != nil {
 

@@ -49,3 +49,24 @@ func (s SessionModule) Detail(ctx context.Context, param SessionDetailParam) (in
 
 	return response, nil
 }
+
+func (s SessionModule) List(ctx context.Context) (interface{}, *helpers.Error) {
+	sessions, err := models.GetAllSession(ctx, s.db)
+
+	if err != nil {
+		return nil, helpers.ErrorWrap(err, s.name, "List/GetAllSession", helpers.InternalServerError,
+			http.StatusInternalServerError)
+	}
+
+	var sessionResponse []models.SessionResponse
+	for _, session := range sessions {
+		response, err := session.Response(ctx, s.db, s.logger)
+		if err != nil {
+			return nil, helpers.ErrorWrap(err, s.name, "List/GetAllSessionResponse", helpers.InternalServerError,
+				http.StatusInternalServerError)
+		}
+		sessionResponse = append(sessionResponse, response)
+	}
+
+	return sessionResponse, nil
+}

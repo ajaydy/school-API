@@ -12,8 +12,9 @@ const (
 )
 
 const (
-	STUDENT_ROLE = "student"
-	ADMIN_ROLE   = "admin"
+	STUDENT_ROLE  = "student"
+	ADMIN_ROLE    = "admin"
+	LECTURER_ROLE = "lecturer"
 )
 
 type (

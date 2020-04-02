@@ -22,6 +22,8 @@ var (
 	programService       *api.ProgramModule
 	resultService        *api.ResultModule
 	sessionService       *api.SessionModule
+	adminService         *api.AdminModule
+	classService         *api.ClassModule
 )
 
 func Init(db *sql.DB, cache *redis.Pool, log *helpers.Logger) {
@@ -39,5 +41,6 @@ func Init(db *sql.DB, cache *redis.Pool, log *helpers.Logger) {
 	programService = api.NewProgramModule(dbPool, cachePool, logger)
 	resultService = api.NewResultModule(dbPool, cachePool, logger)
 	sessionService = api.NewSessionModule(dbPool, cachePool, logger)
-
+	adminService = api.NewAdminModule(dbPool, cachePool, logger)
+	classService = api.NewClassModule(dbPool, cachePool, logger)
 }

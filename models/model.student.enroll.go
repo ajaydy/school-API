@@ -108,3 +108,175 @@ func GetOneStudentEnroll(ctx context.Context, db *sql.DB, studentEnrollID uuid.U
 	return student, nil
 
 }
+
+func GetOneStudentEnrollBySession(ctx context.Context, db *sql.DB, studentEnrollID uuid.UUID) (StudentEnrollModel, error) {
+
+	query := fmt.Sprintf(`
+	SELECT
+			se.id,
+			session_id,
+			student_id,
+			se.is_delete,
+			se.created_by,
+			se.created_at,
+			se.updated_by,
+			se.updated_at
+		FROM student_enroll se
+		INNER JOIN student s ON se.student_id = s.id
+		WHERE session_id = $1
+	`)
+
+	var student StudentEnrollModel
+	err := db.QueryRowContext(ctx, query, studentEnrollID).Scan(
+		&student.ID,
+		&student.SessionID,
+		&student.StudentID,
+		&student.IsDelete,
+		&student.CreatedBy,
+		&student.CreatedAt,
+		&student.UpdatedBy,
+		&student.UpdatedAt,
+	)
+
+	if err != nil {
+		return StudentEnrollModel{}, err
+	}
+
+	return student, nil
+
+}
+
+//select  student_id from student_enroll inner join session where session_id = param.id
+func (s *StudentEnrollModel) Insert(ctx context.Context, db *sql.DB) error {
+
+	query := fmt.Sprintf(`
+		INSERT INTO student_enroll(
+			session_id,
+			student_id,
+			created_by,
+			created_at)
+		VALUES(
+		$1,$2,$3,now())
+		RETURNING id, created_at,is_delete`)
+
+	err := db.QueryRowContext(ctx, query,
+		s.SessionID, s.StudentID, s.CreatedBy).Scan(
+		&s.ID, &s.CreatedAt, &s.IsDelete,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+func GetTimetableForStudent(ctx context.Context, db *sql.DB, filter helpers.Filter, studentID uuid.UUID) ([]StudentEnrollModel, error) {
+
+	var searchQuery string
+
+	if filter.Search != "" {
+		searchQuery = fmt.Sprintf(`WHERE LOWER(name) LIKE LOWER('%%%s%%')`, filter.Search)
+	}
+
+	query := fmt.Sprintf(`
+		SELECT
+			se.id,
+			session_id,
+			student_id,
+			se.is_delete,
+			se.created_by,
+			se.created_at,
+			se.updated_by,
+			se.updated_at
+		FROM student_enroll se
+		INNER JOIN session s ON se.session_id=s.id
+		WHERE student_id = $1
+		%s
+		ORDER BY s.day  %s, s.start_time %s
+		LIMIT $2 OFFSET $3`, searchQuery, filter.Dir, filter.Dir)
+
+	rows, err := db.QueryContext(ctx, query, studentID, filter.Limit, filter.Offset)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var students []StudentEnrollModel
+	for rows.Next() {
+		var student StudentEnrollModel
+
+		rows.Scan(
+			&student.ID,
+			&student.SessionID,
+			&student.StudentID,
+			&student.IsDelete,
+			&student.CreatedBy,
+			&student.CreatedAt,
+			&student.UpdatedBy,
+			&student.UpdatedAt,
+		)
+
+		students = append(students, student)
+	}
+
+	return students, nil
+}
+
+func GetAllStudentEnrollBySession(ctx context.Context, db *sql.DB, filter helpers.Filter) ([]StudentEnrollModel, error) {
+
+	var searchQuery string
+
+	if filter.Search != "" {
+		searchQuery = fmt.Sprintf(`WHERE LOWER(name) LIKE LOWER('%%%s%%')`, filter.Search)
+	}
+
+	query := fmt.Sprintf(`
+		SELECT
+			se.id,
+			session_id,
+			student_id,
+			se.is_delete,
+			se.created_by,
+			se.created_at,
+			se.updated_by,
+			se.updated_at
+		FROM student_enroll se
+		INNER JOIN student s ON se.student_id = s.id
+		WHERE session_id = $1
+		%s
+		ORDER BY  s.name %s
+		LIMIT $2 OFFSET $3`, searchQuery, filter.Dir)
+
+	rows, err := db.QueryContext(ctx, query, filter.SessionID, filter.Limit, filter.Offset)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var students []StudentEnrollModel
+	for rows.Next() {
+		var student StudentEnrollModel
+
+		rows.Scan(
+			&student.ID,
+			&student.SessionID,
+			&student.StudentID,
+			&student.IsDelete,
+			&student.CreatedBy,
+			&student.CreatedAt,
+			&student.UpdatedBy,
+			&student.UpdatedAt,
+		)
+
+		students = append(students, student)
+	}
+
+	return students, nil
+
+}

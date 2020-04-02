@@ -34,21 +34,22 @@ func HandlerSubjectDetail(w http.ResponseWriter, r *http.Request) (interface{}, 
 	return subjectService.Detail(ctx, param)
 }
 
-//func HandlerAddSubjects(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
-//
-//	ctx := r.Context()
-//
-//	var param api.SubjectParamAdd
-//
-//	err := helpers.ParsePOSTRequestData(ctx, r, &param)
-//	if err != nil {
-//		return nil, helpers.ErrorWrap(err, "handler", "HandlerAddSubjects/ParsePOSTRequestData",
-//			helpers.BadRequestMessage, http.StatusBadRequest)
-//
-//	}
-//
-//	return subjectService.Add(ctx, param)
-//}
+func HandlerAddSubject(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
+
+	ctx := r.Context()
+
+	var param api.SubjectParamAdd
+
+	err := helpers.ParseBodyRequestData(ctx, r, &param)
+	if err != nil {
+		return nil, helpers.ErrorWrap(err, "handler", "HandlerAddSubject/ParseBodyRequestData",
+			helpers.BadRequestMessage, http.StatusBadRequest)
+
+	}
+
+	return subjectService.Add(ctx, param)
+}
+
 //
 //func HandlerUpdateSubjects(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
 //
@@ -65,10 +66,10 @@ func HandlerSubjectDetail(w http.ResponseWriter, r *http.Request) (interface{}, 
 //
 //	var param api.SubjectParamUpdate
 //
-//	err = helpers.ParsePOSTRequestData(ctx, r, &param)
+//	err = helpers.ParseBodyRequestData(ctx, r, &param)
 //	if err != nil {
 //
-//		return nil, helpers.ErrorWrap(err, "handler", "HandlerUpdateSubjects/ParsePOSTRequestData",
+//		return nil, helpers.ErrorWrap(err, "handler", "HandlerUpdateSubjects/ParseBodyRequestData",
 //			helpers.BadRequestMessage, http.StatusBadRequest)
 //
 //	}

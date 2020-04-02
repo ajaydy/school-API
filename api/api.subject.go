@@ -22,12 +22,12 @@ type (
 		ID uuid.UUID `json:"id"`
 	}
 
-//	SubjectParamAdd struct {
-//		//ID          uuid.UUID `json:"id" valid:"uuid,required"`
-//		Name        string `json:"name" valid:"length(3|50),required"`
-//		Description string `json:"description" valid:"required"`
-//		Duration    int    `json:"duration" valid:"required"`
-//	}
+	SubjectParamAdd struct {
+		Name        string `json:"name" valid:"length(3|50),required"`
+		Description string `json:"description" valid:"required"`
+		Duration    int    `json:"duration" valid:"required"`
+	}
+
 //
 //	SubjectParamUpdate struct {
 //		ID          uuid.UUID `json:"id"`
@@ -73,23 +73,23 @@ func (s SubjectModule) Detail(ctx context.Context, param SubjectDetailParam) (in
 	return subject.Response(), nil
 }
 
-//func (s SubjectModule) Add(ctx context.Context, param SubjectParamAdd) (interface{}, *helpers.Error) {
-//	subjects := models.SubjectModel{
-//		Name:        param.Name,
-//		Description: param.Description,
-//		Duration:    param.Duration,
-//		CreatedBy:   uuid.NewV4(),
-//	}
-//
-//	err := subjects.Insert(ctx, s.db)
-//	if err != nil {
-//		return nil, helpers.ErrorWrap(err, s.name, "Add/Insert", helpers.InternalServerError,
-//			http.StatusInternalServerError)
-//	}
-//
-//	return subjects.Response(), nil
-//}
-//
+func (s SubjectModule) Add(ctx context.Context, param SubjectParamAdd) (interface{}, *helpers.Error) {
+	subjects := models.SubjectModel{
+		Name:        param.Name,
+		Description: param.Description,
+		Duration:    param.Duration,
+		CreatedBy:   uuid.FromStringOrNil(ctx.Value("user_id").(string)),
+	}
+
+	err := subjects.Insert(ctx, s.db)
+	if err != nil {
+		return nil, helpers.ErrorWrap(err, s.name, "Add/Insert", helpers.InternalServerError,
+			http.StatusInternalServerError)
+	}
+
+	return subjects.Response(), nil
+}
+
 //func (s SubjectModule) Update(ctx context.Context, param SubjectParamUpdate) (interface{}, *helpers.Error) {
 //
 //	subject := models.SubjectModel{

@@ -23,3 +23,9 @@ func HandlerSessionDetail(w http.ResponseWriter, r *http.Request) (interface{}, 
 
 	return sessionService.Detail(ctx, param)
 }
+
+func HandlerSession(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
+	ctx := r.Context()
+
+	return sessionService.List(ctx)
+}

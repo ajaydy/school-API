@@ -13,7 +13,7 @@ func basicAuth(w http.ResponseWriter, r *http.Request) (models.AdminModel, bool)
 		return models.AdminModel{}, false
 	}
 
-	user, err := models.GetOneUserByUsername(r.Context(), dbPool, username)
+	user, err := models.GetOneAdminByUsername(r.Context(), dbPool, username)
 
 	if err != nil {
 		logger.Err.Printf(`%v`, err)

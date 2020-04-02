@@ -23,3 +23,19 @@ func HandlerClassroomDetail(w http.ResponseWriter, r *http.Request) (interface{}
 
 	return classroomService.Detail(ctx, param)
 }
+
+func HandlerAddClassroom(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
+
+	ctx := r.Context()
+
+	var param api.ClassroomAddParam
+
+	err := helpers.ParseBodyRequestData(ctx, r, &param)
+	if err != nil {
+		return nil, helpers.ErrorWrap(err, "handler", "HandlerAddClassroom/ParseBodyRequestData",
+			helpers.BadRequestMessage, http.StatusBadRequest)
+
+	}
+
+	return classroomService.Add(ctx, param)
+}

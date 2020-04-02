@@ -23,3 +23,19 @@ func HandlerProgramDetail(w http.ResponseWriter, r *http.Request) (interface{}, 
 
 	return programService.Detail(ctx, param)
 }
+
+func HandlerAddProgram(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
+
+	ctx := r.Context()
+
+	var param api.ProgramAddParam
+
+	err := helpers.ParseBodyRequestData(ctx, r, &param)
+	if err != nil {
+		return nil, helpers.ErrorWrap(err, "handler", "HandlerAddProgram/ParseBodyRequestData",
+			helpers.BadRequestMessage, http.StatusBadRequest)
+
+	}
+
+	return programService.Add(ctx, param)
+}

@@ -43,21 +43,21 @@ func NewIntakeModule(db *sql.DB, cache *redis.Pool, logger *helpers.Logger) *Int
 	}
 }
 
-//func (s IntakeModule) List(ctx context.Context) (interface{}, *helpers.Error) {
-//	intakes, err := models.GetAllIntake(ctx, s.db)
-//
-//	if err != nil {
-//		return nil, helpers.ErrorWrap(err, s.name, "List/GetAllIntake", helpers.InternalServerError,
-//			http.StatusInternalServerError)
-//	}
-//
-//	var intakeResponse []models.IntakeResponse
-//	for _, intake := range intakes {
-//		intakeResponse = append(intakeResponse, intake.Response())
-//	}
-//
-//	return intakeResponse, nil
-//}
+func (s IntakeModule) List(ctx context.Context) (interface{}, *helpers.Error) {
+	intakes, err := models.GetAllIntake(ctx, s.db)
+
+	if err != nil {
+		return nil, helpers.ErrorWrap(err, s.name, "List/GetAllIntake", helpers.InternalServerError,
+			http.StatusInternalServerError)
+	}
+
+	var intakeResponse []models.IntakeResponse
+	for _, intake := range intakes {
+		intakeResponse = append(intakeResponse, intake.Response())
+	}
+
+	return intakeResponse, nil
+}
 
 func (s IntakeModule) Detail(ctx context.Context, param IntakeDetailParam) (interface{}, *helpers.Error) {
 	intake, err := models.GetOneIntake(ctx, s.db, param.ID)

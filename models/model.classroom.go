@@ -100,3 +100,30 @@ func GetOneClassroom(ctx context.Context, db *sql.DB, classroomID uuid.UUID) (Cl
 	return classroom, nil
 
 }
+
+func (s *ClassRoomModel) Insert(ctx context.Context, db *sql.DB) error {
+
+	query := fmt.Sprintf(`
+		INSERT INTO classroom(
+			faculty_id,
+			floor,
+			room_no,
+			code,
+			created_by,
+			created_at)
+		VALUES(
+		$1,$2,$3,$4,$5,now())
+		RETURNING id, created_at,is_delete`)
+
+	err := db.QueryRowContext(ctx, query,
+		s.FacultyID, s.Floor, s.RoomNo, s.Code, s.CreatedBy).Scan(
+		&s.ID, &s.CreatedAt, &s.IsDelete,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}

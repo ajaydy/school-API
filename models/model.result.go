@@ -101,3 +101,140 @@ func GetOneResult(ctx context.Context, db *sql.DB, resultID uuid.UUID) (ResultMo
 	return result, nil
 
 }
+
+func GetAllResultForOneStudent(ctx context.Context, db *sql.DB, filter helpers.Filter, studentID uuid.UUID) ([]ResultModel, error) {
+
+	var searchQuery string
+
+	if filter.Search != "" {
+		searchQuery = fmt.Sprintf(`WHERE LOWER(name) LIKE LOWER('%%%s%%')`, filter.Search)
+	}
+
+	fmt.Println(studentID)
+
+	query := fmt.Sprintf(`
+		SELECT
+			r.id,
+			student_enroll_id,
+			grade,
+			marks,
+			r.is_delete,
+			r.created_by,
+			r.created_at,
+			r.updated_by,
+			r.updated_at
+		FROM result r
+		INNER JOIN student_enroll se ON r.student_enroll_id = se.id
+		INNER JOIN session s ON se.session_id = s.id
+		INNER JOIN subject su ON s.subject_id = su.id
+		WHERE 
+		se.student_id = $1
+		%s
+		ORDER BY  su.name %s
+		LIMIT $2 OFFSET $3`, searchQuery, filter.Dir)
+
+	rows, err := db.QueryContext(ctx, query, studentID, filter.Limit, filter.Offset)
+	fmt.Println(query)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var results []ResultModel
+	for rows.Next() {
+		var result ResultModel
+		rows.Scan(
+			&result.ID,
+			&result.StudentEnrollID,
+			&result.Grade,
+			&result.Marks,
+			&result.IsDelete,
+			&result.CreatedBy,
+			&result.CreatedAt,
+			&result.UpdatedBy,
+			&result.UpdatedAt,
+		)
+
+		results = append(results, result)
+	}
+
+	return results, nil
+
+}
+
+func (s *ResultModel) Insert(ctx context.Context, db *sql.DB) error {
+
+	query := fmt.Sprintf(`
+		INSERT INTO result(
+			student_enroll_id,
+			grade,
+			marks,
+			created_by,
+			created_at)
+		VALUES(
+		$1,$2,$3,$4,now())
+		RETURNING id, created_at,is_delete`)
+
+	err := db.QueryRowContext(ctx, query,
+		s.StudentEnrollID, s.Grade, s.Marks, s.CreatedBy).Scan(
+		&s.ID, &s.CreatedAt, &s.IsDelete,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+func (s *ResultModel) UpdateByStudentEnroll(ctx context.Context, db *sql.DB) error {
+
+	query := fmt.Sprintf(`
+		UPDATE result
+		SET
+			grade=$1,
+			marks=$2,
+			updated_at=NOW(),
+			updated_by=$3
+		WHERE student_enroll_id = $4
+		RETURNING id,updated_at,created_at,created_by`)
+
+	err := db.QueryRowContext(ctx, query,
+		s.Grade, s.Marks, s.UpdatedBy, s.StudentEnrollID).Scan(
+		&s.ID, &s.UpdatedAt, &s.CreatedAt, &s.CreatedBy,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+func (s *ResultModel) Update(ctx context.Context, db *sql.DB) error {
+
+	query := fmt.Sprintf(`
+		UPDATE result
+		SET
+			grade=$1,
+			marks=$2,
+			updated_at=NOW(),
+			updated_by=$3
+		WHERE id=$4
+		RETURNING id,updated_at,created_at,created_by`)
+
+	err := db.QueryRowContext(ctx, query,
+		s.Grade, s.Marks, s.UpdatedBy, s.ID).Scan(
+		&s.ID, &s.UpdatedAt, &s.CreatedAt, &s.CreatedBy,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}

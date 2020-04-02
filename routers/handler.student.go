@@ -8,16 +8,15 @@ import (
 	"school/helpers"
 )
 
-//func HandlerStudents(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
-//	ctx := r.Context()
-//
-//	filter, err := helpers.ParseFilter(ctx, r)
-//	if err != nil {
-//		return nil, helpers.ErrorWrap(err, "handler", "HandlerStudents/parseFilter",
-//			helpers.BadRequestMessage, http.StatusBadRequest)
-//	}
-//	return studentService.List(ctx, filter)
-//}
+func HandlerStudent(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
+	ctx := r.Context()
+	filter, err := helpers.ParseFilter(ctx, r)
+	if err != nil {
+		return nil, helpers.ErrorWrap(err, "handler", "HandlerStudents/parseFilter",
+			helpers.BadRequestMessage, http.StatusBadRequest)
+	}
+	return studentService.List(ctx, filter)
+}
 
 func HandlerStudentDetail(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
 	ctx := r.Context()
@@ -35,49 +34,50 @@ func HandlerStudentDetail(w http.ResponseWriter, r *http.Request) (interface{}, 
 	return studentService.Detail(ctx, param)
 }
 
-//func HandlerAddStudents(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
-//
-//	ctx := r.Context()
-//
-//	var param api.StudentParamAdd
-//
-//	err := helpers.ParsePOSTRequestData(ctx, r, &param)
-//	if err != nil {
-//		return nil, helpers.ErrorWrap(err, "handler", "HandlerAddStudents/ParsePOSTRequestData",
-//			helpers.BadRequestMessage, http.StatusBadRequest)
-//
-//	}
-//
-//	return studentService.Add(ctx, param)
-//}
-//
-//func HandlerUpdateStudents(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
-//
-//	ctx := r.Context()
-//
-//	params := mux.Vars(r)
-//
-//	studentID, err := uuid.FromString(params["id"])
-//
-//	if err != nil {
-//		return nil, helpers.ErrorWrap(err, "handler", "HandlersUpdateStudents/parseID",
-//			helpers.BadRequestMessage, http.StatusBadRequest)
-//	}
-//
-//	var param api.StudentParamUpdate
-//
-//	err = helpers.ParsePOSTRequestData(ctx, r, &param)
-//	if err != nil {
-//
-//		return nil, helpers.ErrorWrap(err, "handler", "HandlerUpdateStudents/ParsePOSTRequestData",
-//			helpers.BadRequestMessage, http.StatusBadRequest)
-//
-//	}
-//
-//	param.ID = studentID
-//
-//	return studentService.Update(ctx, param)
-//}
+func HandlerAddStudent(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
+
+	ctx := r.Context()
+
+	var param api.StudentParamAdd
+
+	err := helpers.ParseBodyRequestData(ctx, r, &param)
+	if err != nil {
+		return nil, helpers.ErrorWrap(err, "handler", "HandlerAddStudent/ParseBodyRequestData",
+			helpers.BadRequestMessage, http.StatusBadRequest)
+
+	}
+
+	return studentService.Add(ctx, param)
+}
+
+func HandlerUpdateStudent(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
+
+	ctx := r.Context()
+
+	params := mux.Vars(r)
+
+	studentID, err := uuid.FromString(params["id"])
+
+	if err != nil {
+		return nil, helpers.ErrorWrap(err, "handler", "HandlersUpdateStudents/parseID",
+			helpers.BadRequestMessage, http.StatusBadRequest)
+	}
+
+	var param api.StudentParamUpdate
+
+	err = helpers.ParseBodyRequestData(ctx, r, &param)
+	if err != nil {
+
+		return nil, helpers.ErrorWrap(err, "handler", "HandlerUpdateStudents/ParseBodyRequestData",
+			helpers.BadRequestMessage, http.StatusBadRequest)
+
+	}
+
+	param.ID = studentID
+
+	return studentService.Update(ctx, param)
+}
+
 //
 //func HandlerRegisterStudents(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
 //
@@ -85,9 +85,9 @@ func HandlerStudentDetail(w http.ResponseWriter, r *http.Request) (interface{}, 
 //
 //	var param api.StudentParamRegister
 //
-//	err := helpers.ParsePOSTRequestData(ctx, r, &param)
+//	err := helpers.ParseBodyRequestData(ctx, r, &param)
 //	if err != nil {
-//		return nil, helpers.ErrorWrap(err, "handler", "HandlerRegisterStudents/ParsePOSTRequestData",
+//		return nil, helpers.ErrorWrap(err, "handler", "HandlerRegisterStudents/ParseBodyRequestData",
 //			helpers.BadRequestMessage, http.StatusBadRequest)
 //
 //	}
@@ -95,41 +95,17 @@ func HandlerStudentDetail(w http.ResponseWriter, r *http.Request) (interface{}, 
 //	return studentService.Register(ctx, param)
 //}
 //
-//func HandlerLoginStudents(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
-//
-//	ctx := r.Context()
-//
-//	var param api.StudentParamLogin
-//
-//	err := helpers.ParsePOSTRequestData(ctx, r, &param)
-//	if err != nil {
-//		return nil, helpers.ErrorWrap(err, "handler", "HandlerLoginStudents/ParsePOSTRequestData",
-//			helpers.BadRequestMessage, http.StatusBadRequest)
-//
-//	}
-//	return studentService.Login(ctx, param)
-//}
-//
-//func HandlerStudentsWithScore(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
-//	ctx := r.Context()
-//
-//	filter, err := helpers.ParseFilter(ctx, r)
-//	if err != nil {
-//		return nil, helpers.ErrorWrap(err, "handler", "HandlerStudentsWithScore/parseFilter",
-//			helpers.BadRequestMessage, http.StatusBadRequest)
-//	}
-//	return studentService.ListWithScore(ctx, filter)
-//}
-//
-//func HandlerStudentsWithScoreDetail(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
-//	ctx := r.Context()
-//
-//	params := mux.Vars(r)
-//
-//	studentID, err := uuid.FromString(params["id"])
-//	if err != nil {
-//		return nil, helpers.ErrorWrap(err, "handler", "HandlerStudentsWithScoreDetail/parseID",
-//			helpers.BadRequestMessage, http.StatusBadRequest)
-//	}
-//	return studentService.DetailWithScore(ctx, studentID)
-//}
+func HandlerLoginStudent(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
+
+	ctx := r.Context()
+
+	var param api.StudentParamLogin
+
+	err := helpers.ParseBodyRequestData(ctx, r, &param)
+	if err != nil {
+		return nil, helpers.ErrorWrap(err, "handler", "HandlerLoginStudents/ParseBodyRequestData",
+			helpers.BadRequestMessage, http.StatusBadRequest)
+
+	}
+	return studentService.Login(ctx, param)
+}

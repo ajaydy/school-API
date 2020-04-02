@@ -26,7 +26,7 @@ type (
 
 	ProgramResponse struct {
 		ID          uuid.UUID       `json:"id"`
-		Faculty     FacultyResponse `json:"faculty_id"`
+		Faculty     FacultyResponse `json:"faculty"`
 		Name        string          `json:"name"`
 		Code        int             `json:"code"`
 		Description string          `json:"description""`
@@ -99,5 +99,32 @@ func GetOneProgram(ctx context.Context, db *sql.DB, programID uuid.UUID) (Progra
 	}
 
 	return program, nil
+
+}
+
+func (s *ProgramModel) Insert(ctx context.Context, db *sql.DB) error {
+
+	query := fmt.Sprintf(`
+		INSERT INTO program(
+			faculty_id,
+			name,
+			code,
+			description,
+			created_by,
+			created_at)
+		VALUES(
+		$1,$2,$3,$4,$5,now())
+		RETURNING id, created_at,is_delete`)
+
+	err := db.QueryRowContext(ctx, query,
+		s.FacultyID, s.Name, s.Code, s.Description, s.CreatedBy).Scan(
+		&s.ID, &s.CreatedAt, &s.IsDelete,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 
 }

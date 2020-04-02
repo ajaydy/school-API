@@ -49,3 +49,27 @@ func (s ResultModule) Detail(ctx context.Context, param ResultDetailParam) (inte
 
 	return response, nil
 }
+
+func (s ResultModule) List(ctx context.Context, filter helpers.Filter) (interface{}, *helpers.Error) {
+
+	studentID := uuid.FromStringOrNil(ctx.Value("user_id").(string))
+
+	result, err := models.GetAllResultForOneStudent(ctx, s.db, filter, studentID)
+
+	if err != nil {
+		return nil, helpers.ErrorWrap(err, s.name, "List/GetAllResult", helpers.InternalServerError,
+			http.StatusInternalServerError)
+	}
+
+	var resultsResponse []models.ResultResponse
+	for _, results := range result {
+		response, err := results.Response(ctx, s.db, s.logger)
+		if err != nil {
+			return nil, helpers.ErrorWrap(err, s.name, "List/ResultResponse", helpers.InternalServerError,
+				http.StatusInternalServerError)
+		}
+		resultsResponse = append(resultsResponse, response)
+	}
+
+	return resultsResponse, nil
+}

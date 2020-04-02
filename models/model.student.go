@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"github.com/lib/pq"
 	uuid "github.com/satori/go.uuid"
+	"golang.org/x/crypto/bcrypt"
 	"school/helpers"
+	"school/util"
 	"time"
 )
 
@@ -35,7 +37,7 @@ type (
 		Name        string          `json:"name"`
 		Address     string          `json:"address"`
 		DateOfBirth time.Time       `json:"date_of_birth"`
-		Gender      int             `json:"gender"`
+		Gender      string          `json:"gender"`
 		Email       string          `json:"email"`
 		PhoneNo     string          `json:"phone_no"`
 		StudentCode string          `json:"student_code"`
@@ -61,13 +63,19 @@ func (s StudentModel) Response(ctx context.Context, db *sql.DB, logger *helpers.
 		return StudentResponse{}, nil
 	}
 
+	gender, err := util.GetGender(s.Gender)
+	if err != nil {
+		logger.Err.Printf(`model.student.go/Gender/%v`, err)
+		return StudentResponse{}, nil
+	}
+
 	return StudentResponse{
 		ID:          s.ID,
 		Program:     programs,
 		Name:        s.Name,
 		Address:     s.Address,
 		DateOfBirth: s.DateOfBirth,
-		Gender:      s.Gender,
+		Gender:      gender,
 		Email:       s.Email,
 		PhoneNo:     s.PhoneNo,
 		StudentCode: s.StudentCode,
@@ -92,6 +100,7 @@ func GetOneStudent(ctx context.Context, db *sql.DB, studentID uuid.UUID) (Studen
 			gender,
 			email,
 			phone_no,
+			student_code,
 			is_active,
 			created_by,
 			created_at,
@@ -105,12 +114,14 @@ func GetOneStudent(ctx context.Context, db *sql.DB, studentID uuid.UUID) (Studen
 	var student StudentModel
 	err := db.QueryRowContext(ctx, query, studentID).Scan(
 		&student.ID,
+		&student.ProgramID,
 		&student.Name,
 		&student.Address,
 		&student.DateOfBirth,
 		&student.Gender,
 		&student.Email,
 		&student.PhoneNo,
+		&student.StudentCode,
 		&student.IsActive,
 		&student.CreatedBy,
 		&student.CreatedAt,
@@ -126,169 +137,186 @@ func GetOneStudent(ctx context.Context, db *sql.DB, studentID uuid.UUID) (Studen
 
 }
 
-//func GetAllStudent(ctx context.Context, db *sql.DB, filter helpers.Filter) ([]StudentModel, error) {
-//
-//	var searchQuery string
-//
-//	if filter.Search != "" {
-//		searchQuery = fmt.Sprintf(`WHERE LOWER(name) LIKE LOWER('%%%s%%')`, filter.Search)
-//	}
-//
-//	query := fmt.Sprintf(`
-//		SELECT
-//			id,
-//			name,
-//			address,
-//			date_of_birth,
-//			gender,
-//			email,
-//			phone_no,
-//			is_active,
-//			created_by,
-//			created_at,
-//			updated_by,
-//			updated_at
-//		FROM student
-//		%s
-//		ORDER BY name  %s
-//		LIMIT $1 OFFSET $2`, searchQuery, filter.Dir)
-//
-//	rows, err := db.QueryContext(ctx, query, filter.Limit, filter.Offset)
-//
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	defer rows.Close()
-//
-//	var students []StudentModel
-//	for rows.Next() {
-//		var student StudentModel
-//
-//		rows.Scan(
-//			&student.ID,
-//			&student.Name,
-//			&student.Address,
-//			&student.DateOfBirth,
-//			&student.Gender,
-//			&student.Email,
-//			&student.PhoneNo,
-//			&student.IsActive,
-//			&student.CreatedBy,
-//			&student.CreatedAt,
-//			&student.UpdatedBy,
-//			&student.UpdatedAt,
-//		)
-//
-//		students = append(students, student)
-//	}
-//
-//	return students, nil
-//
-//}
+func GetAllStudent(ctx context.Context, db *sql.DB, filter helpers.Filter) ([]StudentModel, error) {
 
-//func GetOneStudentByEmail(ctx context.Context, db *sql.DB, email string) (StudentModel, error) {
-//
-//	query := fmt.Sprintf(`
-//		SELECT
-//			id,
-//			name,
-//			address,
-//			date_of_birth,
-//			gender,
-//			email,
-//			phone_no,
-//			password,
-//			is_active,
-//			created_by,
-//			created_at,
-//			updated_by,
-//			updated_at
-//		FROM student
-//		WHERE
-//			email = $1
-//	`)
-//
-//	var student StudentModel
-//	err := db.QueryRowContext(ctx, query, email).Scan(
-//		&student.ID,
-//		&student.Name,
-//		&student.Address,
-//		&student.DateOfBirth,
-//		&student.Gender,
-//		&student.Email,
-//		&student.PhoneNo,
-//		&student.Password,
-//		&student.IsActive,
-//		&student.CreatedBy,
-//		&student.CreatedAt,
-//		&student.UpdatedBy,
-//		&student.UpdatedAt,
-//	)
-//
-//	if err != nil {
-//		return StudentModel{}, err
-//	}
-//
-//	return student, nil
-//
-//}
-//
-//func (s *StudentModel) Insert(ctx context.Context, db *sql.DB) error {
-//
-//	query := fmt.Sprintf(`
-//		INSERT INTO student(
-//			name,
-//			address,
-//			date_of_birth,
-//			gender,
-//			email,
-//			phone_no,
-//			password,
-//			created_by,
-//			created_at)
-//		VALUES(
-//		$1,$2,$3,$4,$5,$6,$7,$8,now())
-//		RETURNING id, created_at`)
-//
-//	err := db.QueryRowContext(ctx, query,
-//		s.Name, s.Address, s.DateOfBirth, s.Gender, s.Email, s.PhoneNo, s.Password, s.CreatedBy).Scan(
-//		&s.ID, &s.CreatedAt,
-//	)
-//
-//	if err != nil {
-//		return err
-//	}
-//
-//	return nil
-//
-//}
-//
-//func (s *StudentModel) Update(ctx context.Context, db *sql.DB) error {
-//
-//	query := fmt.Sprintf(`
-//		UPDATE student
-//		SET
-//			"name"=$1,
-//			address=$2,
-//			date_of_birth=$3,
-//			gender=$4,
-//			email=$5,
-//			phone_no=$6,
-//			updated_at=NOW(),
-//			updated_by=$7
-//		WHERE id=$8
-//		RETURNING id,created_at`)
-//
-//	err := db.QueryRowContext(ctx, query,
-//		s.Name, s.Address, s.DateOfBirth, s.Gender, s.Email, s.PhoneNo, s.UpdatedBy, s.ID).Scan(
-//		&s.ID, &s.CreatedAt,
-//	)
-//
-//	if err != nil {
-//		return err
-//	}
-//
-//	return nil
-//
-//}
+	var searchQuery string
+
+	if filter.Search != "" {
+		searchQuery = fmt.Sprintf(`WHERE LOWER(name) LIKE LOWER('%%%s%%')`, filter.Search)
+	}
+
+	query := fmt.Sprintf(`
+		SELECT
+			id,
+			program_id,
+			name,
+			address,
+			date_of_birth,	
+			gender,
+			email,
+			phone_no,
+			student_code,
+			is_active,
+			created_by,
+			created_at,
+			updated_by,
+			updated_at
+		FROM student
+		%s
+		ORDER BY name  %s
+		LIMIT $1 OFFSET $2`, searchQuery, filter.Dir)
+
+	rows, err := db.QueryContext(ctx, query, filter.Limit, filter.Offset)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var students []StudentModel
+	for rows.Next() {
+		var student StudentModel
+
+		rows.Scan(
+			&student.ID,
+			&student.ProgramID,
+			&student.Name,
+			&student.Address,
+			&student.DateOfBirth,
+			&student.Gender,
+			&student.Email,
+			&student.PhoneNo,
+			&student.StudentCode,
+			&student.IsActive,
+			&student.CreatedBy,
+			&student.CreatedAt,
+			&student.UpdatedBy,
+			&student.UpdatedAt,
+		)
+
+		students = append(students, student)
+	}
+
+	return students, nil
+
+}
+
+func GetOneStudentByCode(ctx context.Context, db *sql.DB, code string) (StudentModel, error) {
+
+	query := fmt.Sprintf(`
+		SELECT
+			id,
+			program_id,
+			name,
+			address,
+			date_of_birth,	
+			gender,
+			email,
+			phone_no,
+			student_code,
+			password,
+			is_active,
+			created_by,
+			created_at,
+			updated_by,
+			updated_at
+		FROM student
+		WHERE
+			student_code = $1
+	`)
+
+	var student StudentModel
+	err := db.QueryRowContext(ctx, query, code).Scan(
+		&student.ID,
+		&student.ProgramID,
+		&student.Name,
+		&student.Address,
+		&student.DateOfBirth,
+		&student.Gender,
+		&student.Email,
+		&student.PhoneNo,
+		&student.StudentCode,
+		&student.Password,
+		&student.IsActive,
+		&student.CreatedBy,
+		&student.CreatedAt,
+		&student.UpdatedBy,
+		&student.UpdatedAt,
+	)
+
+	if err != nil {
+		return StudentModel{}, err
+	}
+
+	return student, nil
+
+}
+
+func (s *StudentModel) Insert(ctx context.Context, db *sql.DB) error {
+
+	password, err := bcrypt.GenerateFromPassword([]byte(s.Password), 12)
+	if err != nil {
+		return err
+	}
+
+	query := fmt.Sprintf(`
+		INSERT INTO student(
+			name,
+			program_id,
+			address,
+			date_of_birth,
+			gender,
+			email,
+			student_code,
+			password,
+			phone_no,
+			created_by,
+			created_at)
+		VALUES(
+		$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,now())
+		RETURNING id, created_at,is_active`)
+
+	err = db.QueryRowContext(ctx, query,
+		s.Name, s.ProgramID, s.Address, s.DateOfBirth, s.Gender, s.Email, s.StudentCode, password, s.PhoneNo, s.CreatedBy).Scan(
+		&s.ID, &s.CreatedAt, &s.IsActive,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+func (s *StudentModel) Update(ctx context.Context, db *sql.DB) error {
+
+	query := fmt.Sprintf(`
+		UPDATE student
+		SET
+			name=$1,
+			program_id=$2,
+			address=$3,
+			date_of_birth=$4,
+			gender=$5,
+			is_active=$6,
+			email=$7,
+			phone_no=$8,
+			updated_at=NOW(),
+			updated_by=$9
+		WHERE id=$10
+		RETURNING id,created_at,updated_at,created_by,student_code`)
+
+	err := db.QueryRowContext(ctx, query,
+		s.Name, s.ProgramID, s.Address, s.DateOfBirth, s.Gender, s.IsActive, s.Email, s.PhoneNo, s.UpdatedBy, s.ID).Scan(
+		&s.ID, &s.CreatedAt, &s.UpdatedAt, &s.CreatedBy, &s.StudentCode,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}

@@ -98,49 +98,55 @@ func GetOneIntake(ctx context.Context, db *sql.DB, intakeID uuid.UUID) (IntakeMo
 
 }
 
-//func GetAllIntake(ctx context.Context, db *sql.DB) ([]IntakeModel, error) {
-//
-//	query := fmt.Sprintf(`
-//		SELECT
-//			id,
-//			year,
-//			month,
-//			is_delete,
-//			created_by,
-//			created_at,
-//			updated_by,
-//			updated_at
-//		FROM intake`)
-//
-//	rows, err := db.QueryContext(ctx, query)
-//
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	defer rows.Close()
-//
-//	var intakes []IntakeModel
-//	for rows.Next() {
-//		var intake IntakeModel
-//		rows.Scan(
-//			&intake.ID,
-//			&intake.Year,
-//			&intake.Month,
-//			&intake.IsDelete,
-//			&intake.CreatedBy,
-//			&intake.CreatedAt,
-//			&intake.UpdatedBy,
-//			&intake.UpdatedAt,
-//		)
-//
-//		intakes = append(intakes, intake)
-//	}
-//
-//	return intakes, nil
-//
-//}
-//
+func GetAllIntake(ctx context.Context, db *sql.DB) ([]IntakeModel, error) {
+
+	query := fmt.Sprintf(`
+		SELECT
+			id,
+			year,
+			month,
+			trimester,
+			start_date,
+			end_date,
+			is_delete,
+			created_by,
+			created_at,
+			updated_by,
+			updated_at
+		FROM intake`)
+
+	rows, err := db.QueryContext(ctx, query)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var intakes []IntakeModel
+	for rows.Next() {
+		var intake IntakeModel
+		rows.Scan(
+			&intake.ID,
+			&intake.Year,
+			&intake.Month,
+			&intake.Trimester,
+			&intake.StartDate,
+			&intake.EndDate,
+			&intake.IsDelete,
+			&intake.CreatedBy,
+			&intake.CreatedAt,
+			&intake.UpdatedBy,
+			&intake.UpdatedAt,
+		)
+
+		intakes = append(intakes, intake)
+	}
+
+	return intakes, nil
+
+}
+
 //func (s *IntakeModel) Insert(ctx context.Context, db *sql.DB) error {
 //
 //	query := fmt.Sprintf(`
