@@ -53,7 +53,7 @@ func (s LecturerModel) Response(ctx context.Context, db *sql.DB, logger *helpers
 		return LecturerResponse{}, nil
 	}
 
-	programs, err := program.Response(ctx, db, logger)
+	programResponse, err := program.Response(ctx, db, logger)
 
 	if err != nil {
 		logger.Err.Printf(`model.lecturer.go/ProgramResponse/%v`, err)
@@ -69,7 +69,7 @@ func (s LecturerModel) Response(ctx context.Context, db *sql.DB, logger *helpers
 
 	return LecturerResponse{
 		ID:        s.ID,
-		Program:   programs,
+		Program:   programResponse,
 		Name:      s.Name,
 		PhoneNo:   s.PhoneNo,
 		Address:   s.Address,
@@ -146,7 +146,7 @@ func GetOneLecturerByEmail(ctx context.Context, db *sql.DB, email string) (Lectu
 			updated_at
 		FROM lecturer
 		WHERE 
-			email = $1
+			email = $1 AND is_active=true
 	`)
 
 	var lecturer LecturerModel
@@ -173,62 +173,65 @@ func GetOneLecturerByEmail(ctx context.Context, db *sql.DB, email string) (Lectu
 
 }
 
-//func GetAllLecturer(ctx context.Context, db *sql.DB, filter helpers.Filter) ([]LecturerModel, error) {
-//
-//	var searchQuery string
-//
-//	if filter.Search != "" {
-//		searchQuery = fmt.Sprintf(`WHERE LOWER(name) LIKE LOWER('%%%s%%')`, filter.Search)
-//	}
-//
-//	query := fmt.Sprintf(`
-//		SELECT
-//			id,
-//			name,
-//			address,
-//			phone_no,
-//			is_active,
-//			created_by,
-//			created_at,
-//			updated_by,
-//			updated_at,
-//			email
-//		FROM lecturer
-//		%s
-//		ORDER BY name  %s
-//		LIMIT $1 OFFSET $2`, searchQuery, filter.Dir)
-//
-//	rows, err := db.QueryContext(ctx, query, filter.Limit, filter.Offset)
-//
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	defer rows.Close()
-//
-//	var lecturers []LecturerModel
-//	for rows.Next() {
-//		var lecturer LecturerModel
-//		rows.Scan(
-//			&lecturer.ID,
-//			&lecturer.Name,
-//			&lecturer.Address,
-//			&lecturer.PhoneNo,
-//			&lecturer.IsActive,
-//			&lecturer.CreatedBy,
-//			&lecturer.CreatedAt,
-//			&lecturer.UpdatedBy,
-//			&lecturer.UpdatedAt,
-//			&lecturer.Email,
-//		)
-//
-//		lecturers = append(lecturers, lecturer)
-//	}
-//
-//	return lecturers, nil
-//
-//}
-//
+func GetAllLecturer(ctx context.Context, db *sql.DB, filter helpers.Filter) ([]LecturerModel, error) {
+
+	var searchQuery string
+
+	if filter.Search != "" {
+		searchQuery = fmt.Sprintf(`AND LOWER(name) LIKE LOWER('%%%s%%')`, filter.Search)
+	}
+
+	query := fmt.Sprintf(`
+		SELECT
+			id,
+			program_id,
+			name,
+			address,
+			phone_no,
+			is_active,
+			created_by,
+			created_at,
+			updated_by,
+			updated_at,
+			email
+		FROM lecturer
+		WHERE is_active=true
+		%s
+		ORDER BY name  %s
+		LIMIT $1 OFFSET $2`, searchQuery, filter.Dir)
+
+	rows, err := db.QueryContext(ctx, query, filter.Limit, filter.Offset)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var lecturers []LecturerModel
+	for rows.Next() {
+		var lecturer LecturerModel
+		rows.Scan(
+			&lecturer.ID,
+			&lecturer.ProgramID,
+			&lecturer.Name,
+			&lecturer.Address,
+			&lecturer.PhoneNo,
+			&lecturer.IsActive,
+			&lecturer.CreatedBy,
+			&lecturer.CreatedAt,
+			&lecturer.UpdatedBy,
+			&lecturer.UpdatedAt,
+			&lecturer.Email,
+		)
+
+		lecturers = append(lecturers, lecturer)
+	}
+
+	return lecturers, nil
+
+}
+
 func (s *LecturerModel) Insert(ctx context.Context, db *sql.DB) error {
 
 	password, err := bcrypt.GenerateFromPassword([]byte(s.Password), 12)
@@ -264,30 +267,50 @@ func (s *LecturerModel) Insert(ctx context.Context, db *sql.DB) error {
 
 }
 
-//
-//func (s *LecturerModel) Update(ctx context.Context, db *sql.DB) error {
-//
-//	query := fmt.Sprintf(`
-//		UPDATE lecturer
-//		SET
-// 			"name"=$1,
-//			address=$2,
-//			email=$3,
-//			phone_no=$4,
-//			updated_at=NOW(),
-//			updated_by=$5
-//		WHERE id=$6
-//		RETURNING id,created_at`)
-//
-//	err := db.QueryRowContext(ctx, query,
-//		s.Name, s.Address, s.Email, s.PhoneNo, s.UpdatedBy, s.ID).Scan(
-//		&s.ID, &s.CreatedAt,
-//	)
-//
-//	if err != nil {
-//		return err
-//	}
-//
-//	return nil
-//
-//}
+func (s *LecturerModel) Update(ctx context.Context, db *sql.DB) error {
+
+	query := fmt.Sprintf(`
+		UPDATE lecturer
+		SET
+			name=$1,
+			program_id=$2,
+			address=$3,
+			email=$4,
+			phone_no=$5,
+			updated_at=NOW(),
+			updated_by=$6
+		WHERE id=$7
+		RETURNING id,created_at,updated_at,created_by,is_active,gender`)
+
+	err := db.QueryRowContext(ctx, query,
+		s.Name, s.ProgramID, s.Address, s.Email, s.PhoneNo, s.UpdatedBy, s.ID).Scan(
+		&s.ID, &s.CreatedAt, &s.UpdatedAt, &s.CreatedBy, &s.IsActive, &s.Gender,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+func (s *LecturerModel) Delete(ctx context.Context, db *sql.DB) error {
+
+	query := fmt.Sprintf(`
+		UPDATE lecturer
+		SET
+			is_active=false,
+			updated_by=$1,
+			updated_at=NOW()
+		WHERE id=$2`)
+
+	_, err := db.ExecContext(ctx, query,
+		s.UpdatedBy, s.ID)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

@@ -102,7 +102,7 @@ func GetAllClassBySession(ctx context.Context, db *sql.DB, filter helpers.Filter
 	var searchQuery string
 
 	if filter.Search != "" {
-		searchQuery = fmt.Sprintf(`WHERE LOWER(name) LIKE LOWER('%%%s%%')`, filter.Search)
+		searchQuery = fmt.Sprintf(`AND LOWER(name) LIKE LOWER('%s')`, filter.Search)
 	}
 
 	query := fmt.Sprintf(`

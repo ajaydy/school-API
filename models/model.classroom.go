@@ -106,7 +106,7 @@ func GetAllClassroom(ctx context.Context, db *sql.DB, filter helpers.Filter) ([]
 	var searchQuery string
 
 	if filter.Search != "" {
-		searchQuery = fmt.Sprintf(`AND LOWER(name) LIKE LOWER('%%%s%%')`, filter.Search)
+		searchQuery = fmt.Sprintf(`AND LOWER(code) LIKE LOWER('%%%s%%')`, filter.Search)
 	}
 
 	query := fmt.Sprintf(`
@@ -124,7 +124,7 @@ func GetAllClassroom(ctx context.Context, db *sql.DB, filter helpers.Filter) ([]
 		FROM classroom
 		WHERE is_delete = false 
 		%s
-		ORDER BY floor %s ,room_no  %s
+		ORDER BY floor %s,room_no %s
 		LIMIT $1 OFFSET $2`, searchQuery, filter.Dir, filter.Dir)
 
 	rows, err := db.QueryContext(ctx, query, filter.Limit, filter.Offset)

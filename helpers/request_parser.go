@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/asaskevich/govalidator"
 	"github.com/gorilla/schema"
 	uuid "github.com/satori/go.uuid"
@@ -28,6 +29,11 @@ type (
 		SessionID       uuid.UUID `json:"session_id" schema:"session_id"`
 		StudentEnrollID uuid.UUID `json:"student_enroll_id" schema:"student_enroll_id"`
 		ClassID         uuid.UUID `json:"class_id"schema:"class_id"`
+		StudentID       uuid.UUID `json:"student_id" schema:"student_id"`
+		SubjectID       uuid.UUID `json:"subject_id" schema:"subject_id"`
+		LecturerID      uuid.UUID `json:"lecturer_id"schema:"lecturer_id"`
+		IntakeID        uuid.UUID `json:"intake_id" schema:"intake_id"`
+		ProgramID       uuid.UUID `json:"program_id" schema:"program_id"`
 	}
 )
 
@@ -62,6 +68,8 @@ func ParseBodyRequestData(ctx context.Context, r *http.Request, data interface{}
 }
 
 func ParseFilter(ctx context.Context, r *http.Request) (Filter, error) {
+	marshal, _ := json.Marshal(r.URL.Query())
+	fmt.Println(string(marshal))
 	var filter Filter
 	err := decoder.Decode(&filter, r.URL.Query())
 	if err != nil {

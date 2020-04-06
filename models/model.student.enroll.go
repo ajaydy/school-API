@@ -280,3 +280,23 @@ func GetAllStudentEnrollBySession(ctx context.Context, db *sql.DB, filter helper
 	return students, nil
 
 }
+
+func (s *StudentEnrollModel) Delete(ctx context.Context, db *sql.DB) error {
+
+	query := fmt.Sprintf(`
+		UPDATE student_enroll
+		SET
+			is_delete=true,
+			updated_by=$1,
+			updated_at=NOW()
+		WHERE id=$2`)
+
+	_, err := db.ExecContext(ctx, query,
+		s.UpdatedBy, s.ID)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

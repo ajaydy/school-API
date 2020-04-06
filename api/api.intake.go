@@ -3,11 +3,14 @@ package api
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"github.com/gomodule/redigo/redis"
 	uuid "github.com/satori/go.uuid"
 	"net/http"
 	"school/helpers"
 	"school/models"
+	"school/util"
+	"time"
 )
 
 type (
@@ -22,16 +25,24 @@ type (
 		ID uuid.UUID `json:"id"`
 	}
 
-//	IntakeParamAdd struct {
-//		Year  string `json:"year"valid:"required"`
-//		Month int    `json:"month" valid:"range(1|12),required"`
-//	}
-//
-//	IntakeParamUpdate struct {
-//		ID    uuid.UUID `json:"id"`
-//		Year  string    `json:"year"valid:"required"`
-//		Month int       `json:"month" valid:"range(1|12),required"`
-//	}
+	IntakeAddParam struct {
+		Year      string    `json:"year"valid:"required"`
+		Month     int       `json:"month" valid:"required"`
+		StartDate time.Time `json:"start_date"`
+		EndDate   time.Time `json:"end_date"`
+	}
+
+	IntakeUpdateParam struct {
+		ID        uuid.UUID `json:"id"`
+		Year      string    `json:"year"valid:"required"`
+		Month     int       `json:"month" valid:"required"`
+		StartDate time.Time `json:"start_date"`
+		EndDate   time.Time `json:"end_date"`
+	}
+
+	IntakeDeleteParam struct {
+		ID uuid.UUID `json:"id"`
+	}
 )
 
 func NewIntakeModule(db *sql.DB, cache *redis.Pool, logger *helpers.Logger) *IntakeModule {
@@ -43,20 +54,20 @@ func NewIntakeModule(db *sql.DB, cache *redis.Pool, logger *helpers.Logger) *Int
 	}
 }
 
-func (s IntakeModule) List(ctx context.Context) (interface{}, *helpers.Error) {
-	intakes, err := models.GetAllIntake(ctx, s.db)
+func (s IntakeModule) List(ctx context.Context, filter helpers.Filter) (interface{}, *helpers.Error) {
+	intakes, err := models.GetAllIntake(ctx, s.db, filter)
 
 	if err != nil {
 		return nil, helpers.ErrorWrap(err, s.name, "List/GetAllIntake", helpers.InternalServerError,
 			http.StatusInternalServerError)
 	}
 
-	var intakeResponse []models.IntakeResponse
+	var intakesResponse []models.IntakeResponse
 	for _, intake := range intakes {
-		intakeResponse = append(intakeResponse, intake.Response())
+		intakesResponse = append(intakesResponse, intake.Response())
 	}
 
-	return intakeResponse, nil
+	return intakesResponse, nil
 }
 
 func (s IntakeModule) Detail(ctx context.Context, param IntakeDetailParam) (interface{}, *helpers.Error) {
@@ -70,39 +81,81 @@ func (s IntakeModule) Detail(ctx context.Context, param IntakeDetailParam) (inte
 	return intake.Response(), nil
 }
 
-//func (s IntakeModule) Add(ctx context.Context, param IntakeParamAdd) (interface{}, *helpers.Error) {
-//	intake := models.IntakeModel{
-//		Year:      param.Year,
-//		Month:     param.Month,
-//		CreatedBy: uuid.NewV4(),
-//	}
-//
-//	err := intake.Insert(ctx, s.db)
-//	if err != nil {
-//		return nil, helpers.ErrorWrap(err, s.name, "Add/Insert", helpers.InternalServerError,
-//			http.StatusInternalServerError)
-//	}
-//
-//	return intake, nil
-//}
-//
-//func (s IntakeModule) Update(ctx context.Context, param IntakeParamUpdate) (interface{}, *helpers.Error) {
-//
-//	intake := models.IntakeModel{
-//		ID:    param.ID,
-//		Year:  param.Year,
-//		Month: param.Month,
-//		UpdatedBy: uuid.NullUUID{
-//			UUID:  uuid.FromStringOrNil(ctx.Value("user_id").(string)),
-//			Valid: true,
-//		},
-//	}
-//	err := intake.Update(ctx, s.db)
-//	if err != nil {
-//		return nil, helpers.ErrorWrap(err, s.name, "Update/Update", helpers.InternalServerError,
-//			http.StatusInternalServerError)
-//	}
-//
-//	return intake, nil
-//
-//}
+func (s IntakeModule) Add(ctx context.Context, param IntakeAddParam) (interface{}, *helpers.Error) {
+
+	if param.Month != 4 && param.Month != 7 && param.Month != 11 {
+		return nil, helpers.ErrorWrap(errors.New("Invalid Month"), s.name, "Add/Month",
+			helpers.IncorrectMonthMessage,
+			http.StatusBadRequest)
+	}
+
+	trimester := util.GetTrimester(param.Month)
+
+	intake := models.IntakeModel{
+		Trimester: trimester,
+		Year:      param.Year,
+		Month:     param.Month,
+		StartDate: param.StartDate,
+		EndDate:   param.EndDate,
+		CreatedBy: uuid.NewV4(),
+	}
+
+	err := intake.Insert(ctx, s.db)
+	if err != nil {
+		return nil, helpers.ErrorWrap(err, s.name, "Add/Insert", helpers.InternalServerError,
+			http.StatusInternalServerError)
+	}
+
+	return intake.Response(), nil
+}
+
+func (s IntakeModule) Update(ctx context.Context, param IntakeUpdateParam) (interface{}, *helpers.Error) {
+
+	if param.Month != 4 && param.Month != 7 && param.Month != 11 {
+		return nil, helpers.ErrorWrap(errors.New("Invalid Month"), s.name, "Update/Month",
+			helpers.IncorrectMonthMessage,
+			http.StatusBadRequest)
+	}
+	trimester := util.GetTrimester(param.Month)
+
+	intake := models.IntakeModel{
+		ID:        param.ID,
+		Trimester: trimester,
+		Year:      param.Year,
+		Month:     param.Month,
+		StartDate: param.StartDate,
+		EndDate:   param.EndDate,
+		UpdatedBy: uuid.NullUUID{
+			UUID:  uuid.FromStringOrNil(ctx.Value("user_id").(string)),
+			Valid: true,
+		},
+	}
+	err := intake.Update(ctx, s.db)
+	if err != nil {
+		return nil, helpers.ErrorWrap(err, s.name, "Update/Update", helpers.InternalServerError,
+			http.StatusInternalServerError)
+	}
+
+	return intake.Response(), nil
+
+}
+
+func (s IntakeModule) Delete(ctx context.Context, param IntakeDeleteParam) (interface{}, *helpers.Error) {
+
+	intake := models.IntakeModel{
+		ID: param.ID,
+		UpdatedBy: uuid.NullUUID{
+			UUID:  uuid.FromStringOrNil(ctx.Value("user_id").(string)),
+			Valid: true,
+		},
+	}
+
+	err := intake.Delete(ctx, s.db)
+	if err != nil {
+		return nil, helpers.ErrorWrap(err, s.name, "Delete/Delete", helpers.InternalServerError,
+			http.StatusInternalServerError)
+	}
+
+	return nil, nil
+
+}

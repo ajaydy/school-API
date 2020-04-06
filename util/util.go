@@ -84,3 +84,18 @@ func GetDay(day int) string {
 		return "Invalid"
 	}
 }
+
+func GetTrimester(month int) int {
+
+	switch month {
+	case 4:
+		return 1
+	case 7:
+		return 2
+	case 11:
+		return 3
+	default:
+		return 0
+	}
+
+}

@@ -35,7 +35,7 @@ func HandlerClassDetail(w http.ResponseWriter, r *http.Request) (interface{}, *h
 	return classService.Detail(ctx, param)
 }
 
-func HandlerAddClass(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
+func HandlerClassAdd(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
 
 	ctx := r.Context()
 
@@ -43,7 +43,7 @@ func HandlerAddClass(w http.ResponseWriter, r *http.Request) (interface{}, *help
 
 	err := helpers.ParseBodyRequestData(ctx, r, &param)
 	if err != nil {
-		return nil, helpers.ErrorWrap(err, "handler", "HandlerAddClass/ParseBodyRequestData",
+		return nil, helpers.ErrorWrap(err, "handler", "HandlerClassAdd/ParseBodyRequestData",
 			helpers.BadRequestMessage, http.StatusBadRequest)
 
 	}

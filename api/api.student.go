@@ -28,7 +28,7 @@ type (
 		ID uuid.UUID `json:"id"`
 	}
 
-	StudentParamAdd struct {
+	StudentAddParam struct {
 		Name        string    `json:"name" valid:"length(3|50),required"`
 		ProgramID   uuid.UUID `json:"program_id" valid:"required"`
 		Address     string    `json:"address" valid:"optional"`
@@ -38,7 +38,7 @@ type (
 		PhoneNo     string    `json:"phone_no" valid:"length(10|15),required"`
 	}
 
-	StudentParamUpdate struct {
+	StudentUpdateParam struct {
 		ID          uuid.UUID `json:"id" value:"required"`
 		ProgramID   uuid.UUID `json:"program_id" value:"required"`
 		Name        string    `json:"name" valid:"length(3|50),required"`
@@ -48,6 +48,10 @@ type (
 		Email       string    `json:"email" valid:"email,required"`
 		PhoneNo     string    `json:"phone_no" valid:"length(10|15),required"`
 		IsActive    bool      `json:"is_active" valid:"required"`
+	}
+
+	StudentDeleteParam struct {
+		ID uuid.UUID `json:"id"`
 	}
 
 	//StudentParamRegister struct {
@@ -61,8 +65,8 @@ type (
 	//	Password        string    `json:"password" valid:"length(6|15),required"`
 	//	ConfirmPassword string    `json:"confirm_password" valid:"length(6|15),required"`
 	//}
-	//
-	StudentParamLogin struct {
+
+	StudentLoginParam struct {
 		StudentCode string `json:"student_code" valid:"required"`
 		Password    string `json:"password" valid:"length(1|50),required"`
 	}
@@ -136,16 +140,16 @@ func NewStudentModule(db *sql.DB, cache *redis.Pool, logger *helpers.Logger) *St
 //	return studentSession, nil
 //}
 //
-func (s StudentModule) Login(ctx context.Context, param StudentParamLogin) (interface{}, *helpers.Error) {
+func (s StudentModule) Login(ctx context.Context, param StudentLoginParam) (interface{}, *helpers.Error) {
 
 	student, err := models.GetOneStudentByCode(ctx, s.db, param.StudentCode)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, helpers.ErrorWrap(err, s.name, "Session/Login", helpers.IncorrectEmailMessage,
+			return nil, helpers.ErrorWrap(err, s.name, "Login/StudentCode", helpers.IncorrectStudentCodeMessage,
 				http.StatusInternalServerError)
 		}
-		return nil, helpers.ErrorWrap(err, s.name, "List/GetOneStudentByCode", helpers.InternalServerError,
+		return nil, helpers.ErrorWrap(err, s.name, "Login/GetOneStudentByCode", helpers.InternalServerError,
 			http.StatusInternalServerError)
 	}
 
@@ -219,7 +223,7 @@ func (s StudentModule) Detail(ctx context.Context, param StudentDetailParam) (in
 	return response, nil
 }
 
-func (s StudentModule) Add(ctx context.Context, param StudentParamAdd) (interface{}, *helpers.Error) {
+func (s StudentModule) Add(ctx context.Context, param StudentAddParam) (interface{}, *helpers.Error) {
 
 	password := util.RandomString(12)
 
@@ -279,7 +283,7 @@ func (s StudentModule) Add(ctx context.Context, param StudentParamAdd) (interfac
 	return response, nil
 }
 
-func (s StudentModule) Update(ctx context.Context, param StudentParamUpdate) (interface{}, *helpers.Error) {
+func (s StudentModule) Update(ctx context.Context, param StudentUpdateParam) (interface{}, *helpers.Error) {
 
 	student := models.StudentModel{
 		ID:          param.ID,
@@ -302,12 +306,32 @@ func (s StudentModule) Update(ctx context.Context, param StudentParamUpdate) (in
 			http.StatusInternalServerError)
 	}
 
-	students, err := student.Response(ctx, s.db, s.logger)
+	response, err := student.Response(ctx, s.db, s.logger)
 	if err != nil {
 		return nil, helpers.ErrorWrap(err, s.name, "Update/StudentResponse", helpers.InternalServerError,
 			http.StatusInternalServerError)
 	}
 
-	return students, nil
+	return response, nil
+
+}
+
+func (s StudentModule) Delete(ctx context.Context, param StudentDeleteParam) (interface{}, *helpers.Error) {
+
+	student := models.StudentModel{
+		ID: param.ID,
+		UpdatedBy: uuid.NullUUID{
+			UUID:  uuid.FromStringOrNil(ctx.Value("user_id").(string)),
+			Valid: true,
+		},
+	}
+
+	err := student.Delete(ctx, s.db)
+	if err != nil {
+		return nil, helpers.ErrorWrap(err, s.name, "Delete/Delete", helpers.InternalServerError,
+			http.StatusInternalServerError)
+	}
+
+	return nil, nil
 
 }

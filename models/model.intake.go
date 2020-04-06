@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/lib/pq"
 	uuid "github.com/satori/go.uuid"
+	"school/helpers"
 	"time"
 )
 
@@ -98,7 +99,7 @@ func GetOneIntake(ctx context.Context, db *sql.DB, intakeID uuid.UUID) (IntakeMo
 
 }
 
-func GetAllIntake(ctx context.Context, db *sql.DB) ([]IntakeModel, error) {
+func GetAllIntake(ctx context.Context, db *sql.DB, filter helpers.Filter) ([]IntakeModel, error) {
 
 	query := fmt.Sprintf(`
 		SELECT
@@ -113,9 +114,12 @@ func GetAllIntake(ctx context.Context, db *sql.DB) ([]IntakeModel, error) {
 			created_at,
 			updated_by,
 			updated_at
-		FROM intake`)
+		FROM intake
+		WHERE is_delete = false
+		ORDER BY trimester  %s
+		LIMIT $1 OFFSET $2`, filter.Dir)
 
-	rows, err := db.QueryContext(ctx, query)
+	rows, err := db.QueryContext(ctx, query, filter.Limit, filter.Offset)
 
 	if err != nil {
 		return nil, err
@@ -147,52 +151,78 @@ func GetAllIntake(ctx context.Context, db *sql.DB) ([]IntakeModel, error) {
 
 }
 
-//func (s *IntakeModel) Insert(ctx context.Context, db *sql.DB) error {
-//
-//	query := fmt.Sprintf(`
-//		INSERT INTO intake(
-//			year,
-//			month,
-//			created_by,
-//			created_at)
-//		VALUES(
-//		$1,$2,$3,now())
-//		RETURNING id, created_at`)
-//
-//	err := db.QueryRowContext(ctx, query,
-//		s.Year, s.Month, s.CreatedBy).Scan(
-//		&s.ID, &s.CreatedAt,
-//	)
-//
-//	if err != nil {
-//		return err
-//	}
-//
-//	return nil
-//
-//}
-//
-//func (s *IntakeModel) Update(ctx context.Context, db *sql.DB) error {
-//
-//	query := fmt.Sprintf(`
-//		UPDATE intake
-//		SET
-//			year=$1,
-//			month=$2,
-//			updated_at=NOW(),
-//			updated_by=$3
-//		WHERE id=$4
-//		RETURNING id,created_at`)
-//
-//	err := db.QueryRowContext(ctx, query,
-//		s.Year, s.Month, s.UpdatedBy, s.ID).Scan(
-//		&s.ID, &s.CreatedAt,
-//	)
-//
-//	if err != nil {
-//		return err
-//	}
-//
-//	return nil
-//
-//}
+func (s *IntakeModel) Insert(ctx context.Context, db *sql.DB) error {
+
+	query := fmt.Sprintf(`
+		INSERT INTO intake(
+			year,
+			month,
+			trimester,
+			start_date,
+			end_date,
+			created_by,
+			created_at)
+		VALUES(
+		$1,$2,$3,$4,$5,$6,now())
+		RETURNING id, created_at,is_delete`)
+
+	err := db.QueryRowContext(ctx, query,
+		s.Year, s.Month, s.Trimester, s.StartDate, s.EndDate, s.CreatedBy).Scan(
+		&s.ID, &s.CreatedAt, &s.IsDelete,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+func (s *IntakeModel) Update(ctx context.Context, db *sql.DB) error {
+
+	query := fmt.Sprintf(`
+		UPDATE intake
+		SET
+			year=$1,
+			month=$2,
+			trimester=$3,
+			start_date=$4,
+			end_date=$5,
+			updated_at=NOW(),
+			updated_by=$6
+		WHERE id=$7
+		RETURNING id,created_at,updated_at,created_by,is_delete`)
+
+	err := db.QueryRowContext(ctx, query,
+		s.Year, s.Month, s.Trimester, s.StartDate, s.EndDate, s.UpdatedBy, s.ID).Scan(
+		&s.ID, &s.CreatedAt, &s.UpdatedAt, &s.CreatedBy, &s.IsDelete,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+func (s *IntakeModel) Delete(ctx context.Context, db *sql.DB) error {
+
+	query := fmt.Sprintf(`
+		UPDATE intake
+		SET
+			is_delete=true,
+			updated_by=$1,
+			updated_at=NOW()
+		WHERE id=$2`)
+
+	_, err := db.ExecContext(ctx, query,
+		s.UpdatedBy, s.ID)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

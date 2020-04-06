@@ -24,12 +24,94 @@ func HandlerResultDetail(w http.ResponseWriter, r *http.Request) (interface{}, *
 	return resultService.Detail(ctx, param)
 }
 
-func HandlerResult(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
+func HandlerResultList(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
 	ctx := r.Context()
+
 	filter, err := helpers.ParseFilter(ctx, r)
 	if err != nil {
 		return nil, helpers.ErrorWrap(err, "handler", "HandlerResult/parseFilter",
 			helpers.BadRequestMessage, http.StatusBadRequest)
 	}
 	return resultService.List(ctx, filter)
+}
+
+func HandlerResultAdd(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
+
+	ctx := r.Context()
+
+	var param api.ResultAddParam
+
+	err := helpers.ParseBodyRequestData(ctx, r, &param)
+	if err != nil {
+		return nil, helpers.ErrorWrap(err, "handler", "HandlerResultAdd/ParseBodyRequestData",
+			helpers.BadRequestMessage, http.StatusBadRequest)
+
+	}
+
+	return resultService.Add(ctx, param)
+}
+
+func HandlerResultUpdate(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
+
+	ctx := r.Context()
+
+	params := mux.Vars(r)
+
+	resultID, err := uuid.FromString(params["id"])
+
+	if err != nil {
+		return nil, helpers.ErrorWrap(err, "handler", "HandlerResultUpdate/parseID",
+			helpers.BadRequestMessage, http.StatusBadRequest)
+	}
+
+	var param api.ResultUpdateParam
+
+	err = helpers.ParseBodyRequestData(ctx, r, &param)
+	if err != nil {
+
+		return nil, helpers.ErrorWrap(err, "handler", "HandlerResultUpdate/ParseBodyRequestData",
+			helpers.BadRequestMessage, http.StatusBadRequest)
+
+	}
+
+	param.ID = resultID
+
+	return resultService.Update(ctx, param)
+}
+
+func HandlerResultDelete(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
+
+	ctx := r.Context()
+
+	params := mux.Vars(r)
+
+	resultID, err := uuid.FromString(params["id"])
+
+	if err != nil {
+		return nil, helpers.ErrorWrap(err, "handler", "HandlerResultDelete/parseID",
+			helpers.BadRequestMessage, http.StatusBadRequest)
+	}
+
+	var param api.ResultDeleteParam
+
+	param.ID = resultID
+
+	return resultService.Delete(ctx, param)
+}
+
+func HandlerLecturerUpdateResult(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
+
+	ctx := r.Context()
+
+	var param api.LecturerUpdateResultParam
+
+	err := helpers.ParseBodyRequestData(ctx, r, &param)
+	if err != nil {
+
+		return nil, helpers.ErrorWrap(err, "handler", "HandlerLecturerUpdateResult/ParseBodyRequestData",
+			helpers.BadRequestMessage, http.StatusBadRequest)
+
+	}
+
+	return resultService.LecturerUpdateResult(ctx, param)
 }

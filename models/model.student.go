@@ -57,7 +57,7 @@ func (s StudentModel) Response(ctx context.Context, db *sql.DB, logger *helpers.
 		return StudentResponse{}, nil
 	}
 
-	programs, err := program.Response(ctx, db, logger)
+	programResponse, err := program.Response(ctx, db, logger)
 	if err != nil {
 		logger.Err.Printf(`model.student.go/programResponse/%v`, err)
 		return StudentResponse{}, nil
@@ -71,7 +71,7 @@ func (s StudentModel) Response(ctx context.Context, db *sql.DB, logger *helpers.
 
 	return StudentResponse{
 		ID:          s.ID,
-		Program:     programs,
+		Program:     programResponse,
 		Name:        s.Name,
 		Address:     s.Address,
 		DateOfBirth: s.DateOfBirth,
@@ -142,7 +142,7 @@ func GetAllStudent(ctx context.Context, db *sql.DB, filter helpers.Filter) ([]St
 	var searchQuery string
 
 	if filter.Search != "" {
-		searchQuery = fmt.Sprintf(`WHERE LOWER(name) LIKE LOWER('%%%s%%')`, filter.Search)
+		searchQuery = fmt.Sprintf(`AND LOWER(name) LIKE LOWER('%%%s%%')`, filter.Search)
 	}
 
 	query := fmt.Sprintf(`
@@ -162,6 +162,7 @@ func GetAllStudent(ctx context.Context, db *sql.DB, filter helpers.Filter) ([]St
 			updated_by,
 			updated_at
 		FROM student
+		WHERE is_active = true
 		%s
 		ORDER BY name  %s
 		LIMIT $1 OFFSET $2`, searchQuery, filter.Dir)
@@ -223,7 +224,7 @@ func GetOneStudentByCode(ctx context.Context, db *sql.DB, code string) (StudentM
 			updated_at
 		FROM student
 		WHERE
-			student_code = $1
+			student_code = $1 AND is_active=true
 	`)
 
 	var student StudentModel
@@ -300,17 +301,16 @@ func (s *StudentModel) Update(ctx context.Context, db *sql.DB) error {
 			address=$3,
 			date_of_birth=$4,
 			gender=$5,
-			is_active=$6,
-			email=$7,
-			phone_no=$8,
+			email=$6,
+			phone_no=$7,
 			updated_at=NOW(),
-			updated_by=$9
-		WHERE id=$10
-		RETURNING id,created_at,updated_at,created_by,student_code`)
+			updated_by=$8
+		WHERE id=$9
+		RETURNING id,created_at,updated_at,created_by,student_code,is_active`)
 
 	err := db.QueryRowContext(ctx, query,
-		s.Name, s.ProgramID, s.Address, s.DateOfBirth, s.Gender, s.IsActive, s.Email, s.PhoneNo, s.UpdatedBy, s.ID).Scan(
-		&s.ID, &s.CreatedAt, &s.UpdatedAt, &s.CreatedBy, &s.StudentCode,
+		s.Name, s.ProgramID, s.Address, s.DateOfBirth, s.Gender, s.Email, s.PhoneNo, s.UpdatedBy, s.ID).Scan(
+		&s.ID, &s.CreatedAt, &s.UpdatedAt, &s.CreatedBy, &s.StudentCode, &s.IsActive,
 	)
 
 	if err != nil {
@@ -319,4 +319,24 @@ func (s *StudentModel) Update(ctx context.Context, db *sql.DB) error {
 
 	return nil
 
+}
+
+func (s *StudentModel) Delete(ctx context.Context, db *sql.DB) error {
+
+	query := fmt.Sprintf(`
+		UPDATE student
+		SET
+			is_active=false,
+			updated_by=$1,
+			updated_at=NOW()
+		WHERE id=$2`)
+
+	_, err := db.ExecContext(ctx, query,
+		s.UpdatedBy, s.ID)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

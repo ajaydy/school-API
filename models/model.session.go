@@ -165,7 +165,23 @@ func GetOneSession(ctx context.Context, db *sql.DB, sessionID uuid.UUID) (Sessio
 
 }
 
-func GetAllSession(ctx context.Context, db *sql.DB) ([]SessionModel, error) {
+func GetAllSession(ctx context.Context, db *sql.DB, filter helpers.Filter) ([]SessionModel, error) {
+
+	var subjectIDQuery string
+	var intakeIDQuery string
+
+	if filter.SubjectID != uuid.Nil {
+		subjectIDQuery = fmt.Sprintf(`AND subject_id = '%s'`, filter.SubjectID)
+	}
+
+	if filter.IntakeID != uuid.Nil {
+		intakeIDQuery = fmt.Sprintf(`AND intake_id = '%s'`, filter.IntakeID)
+	}
+	//fmt.Println(filter.IntakeID != uuid.Nil)
+	//fmt.Println(filter.SubjectID != uuid.Nil)
+	//
+	//fmt.Println(filter.SubjectID)
+	//fmt.Println(filter.IntakeID)
 
 	query := fmt.Sprintf(`
 		SELECT
@@ -183,9 +199,14 @@ func GetAllSession(ctx context.Context, db *sql.DB) ([]SessionModel, error) {
 			created_at,
 			updated_by,
 			updated_at
-		FROM session`)
+		FROM session
+		WHERE is_delete=false
+		%s 
+		%s
+		LIMIT $1 OFFSET $2`, subjectIDQuery, intakeIDQuery)
 
-	rows, err := db.QueryContext(ctx, query)
+	fmt.Println(query)
+	rows, err := db.QueryContext(ctx, query, filter.Limit, filter.Offset)
 
 	if err != nil {
 		return nil, err
@@ -283,4 +304,86 @@ func GetAllSessionByLecturer(ctx context.Context, db *sql.DB, filter helpers.Fil
 
 	return sessions, nil
 
+}
+
+func (s *SessionModel) Insert(ctx context.Context, db *sql.DB) error {
+
+	query := fmt.Sprintf(`
+		INSERT INTO session(
+			subject_id,
+			lecturer_id,
+			program_id,
+			classroom_id,
+			intake_id,
+			day,
+			start_time,
+			end_time,
+			created_by,
+			created_at)
+		VALUES(
+		$1,$2,$3,$4,$5,$6,$7,$8,$9,now())
+		RETURNING id, created_at,is_delete`)
+
+	err := db.QueryRowContext(ctx, query,
+		s.SubjectID, s.LecturerID, s.ProgramID, s.ClassroomID, s.IntakeID, s.Day, s.StartTime, s.EndTime, s.CreatedBy).Scan(
+		&s.ID, &s.CreatedAt, &s.IsDelete,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+func (s *SessionModel) Update(ctx context.Context, db *sql.DB) error {
+
+	query := fmt.Sprintf(`
+		UPDATE session
+		SET
+			subject_id=$1,
+			lecturer_id=$2,
+			program_id=$3,
+			classroom_id=$4,
+			intake_id=$5,
+			day=$6,
+			start_time=$7,
+			end_time=$8,
+			updated_at=NOW(),
+			updated_by=$9
+		WHERE id=$10
+		RETURNING id,created_at,updated_at,created_by,is_delete`)
+
+	err := db.QueryRowContext(ctx, query,
+		s.SubjectID, s.LecturerID, s.ProgramID, s.ClassroomID, s.IntakeID, s.Day, s.StartTime, s.EndTime, s.UpdatedBy, s.ID).Scan(
+		&s.ID, &s.CreatedAt, &s.UpdatedAt, &s.CreatedBy, &s.IsDelete,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+func (s *SessionModel) Delete(ctx context.Context, db *sql.DB) error {
+
+	query := fmt.Sprintf(`
+		UPDATE session
+		SET
+			is_delete=true,
+			updated_by=$1,
+			updated_at=NOW()
+		WHERE id=$2`)
+
+	_, err := db.ExecContext(ctx, query,
+		s.UpdatedBy, s.ID)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

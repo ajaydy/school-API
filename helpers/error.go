@@ -44,10 +44,12 @@ func ErrorResponse(w http.ResponseWriter, message string, status int) {
 }
 
 const (
-	InternalServerError      = "Internal Server Error"
-	BadRequestMessage        = "Bad Request"
-	UnauthorizedMessage      = "Unauthorized"
-	IncorrectEmailMessage    = "Incorrect Email"
-	IncorrectPasswordMessage = "Incorrect Password"
-	ForbiddenMessage         = "Forbidden Message"
+	InternalServerError         = "Internal Server Error"
+	BadRequestMessage           = "Bad Request"
+	UnauthorizedMessage         = "Unauthorized"
+	IncorrectEmailMessage       = "Incorrect Email"
+	IncorrectStudentCodeMessage = "Incorrect Student Code"
+	IncorrectPasswordMessage    = "Incorrect Password"
+	IncorrectMonthMessage       = "Incorrect Month"
+	ForbiddenMessage            = "Forbidden Message"
 )
