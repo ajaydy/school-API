@@ -43,7 +43,7 @@ func (s AttendanceModel) Response(ctx context.Context, db *sql.DB, logger *helpe
 		return AttendanceResponse{}, nil
 	}
 
-	students, err := student.Response(ctx, db, logger)
+	studentResponse, err := student.Response(ctx, db, logger)
 	if err != nil {
 		logger.Err.Printf(`model.attendance.go/studentResponse/%v`, err)
 		return AttendanceResponse{}, nil
@@ -55,7 +55,7 @@ func (s AttendanceModel) Response(ctx context.Context, db *sql.DB, logger *helpe
 		return AttendanceResponse{}, nil
 	}
 
-	classes, err := class.Response(ctx, db, logger)
+	classResponse, err := class.Response(ctx, db, logger)
 	if err != nil {
 		logger.Err.Printf(`model.attendance.go/classResponse/%v`, err)
 		return AttendanceResponse{}, nil
@@ -63,8 +63,8 @@ func (s AttendanceModel) Response(ctx context.Context, db *sql.DB, logger *helpe
 
 	return AttendanceResponse{
 		ID:        s.ID,
-		Student:   students,
-		Class:     classes,
+		Student:   studentResponse,
+		Class:     classResponse,
 		IsAttend:  s.IsAttend,
 		CreatedBy: s.CreatedBy,
 		CreatedAt: s.CreatedAt,

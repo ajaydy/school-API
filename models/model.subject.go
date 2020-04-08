@@ -97,7 +97,7 @@ func GetAllSubject(ctx context.Context, db *sql.DB, filter helpers.Filter) ([]Su
 	}
 
 	query := fmt.Sprintf(`
-		SELECT
+		SELECTZ
 			id,
 			name,
 			description,

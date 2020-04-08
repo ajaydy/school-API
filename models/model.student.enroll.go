@@ -49,13 +49,13 @@ func (s StudentEnrollModel) Response(ctx context.Context, db *sql.DB, logger *he
 		return StudentEnrollResponse{}, err
 	}
 
-	sessions, err := session.Response(ctx, db, logger)
+	sessionResponse, err := session.Response(ctx, db, logger)
 	if err != nil {
 		logger.Err.Printf(`model.student.enroll.go/sessionResponse/%v`, err)
 		return StudentEnrollResponse{}, err
 	}
 
-	students, err := student.Response(ctx, db, logger)
+	studentResponse, err := student.Response(ctx, db, logger)
 	if err != nil {
 		logger.Err.Printf(`model.student.enroll.go/studentResponse/%v`, err)
 		return StudentEnrollResponse{}, err
@@ -63,8 +63,8 @@ func (s StudentEnrollModel) Response(ctx context.Context, db *sql.DB, logger *he
 
 	return StudentEnrollResponse{
 		ID:        s.ID,
-		Session:   sessions,
-		Student:   students,
+		Session:   sessionResponse,
+		Student:   studentResponse,
 		IsDelete:  s.IsDelete,
 		CreatedBy: s.CreatedBy,
 		CreatedAt: s.CreatedAt,
@@ -86,8 +86,8 @@ func GetOneStudentEnroll(ctx context.Context, db *sql.DB, studentEnrollID uuid.U
 			updated_by,
 			updated_at
 		FROM student_enroll
-		WHERE 
-			id = $1
+		WHERE is_delete = false 
+		AND   id = $1
 	`)
 
 	var student StudentEnrollModel
@@ -173,12 +173,18 @@ func (s *StudentEnrollModel) Insert(ctx context.Context, db *sql.DB) error {
 
 }
 
-func GetTimetableForStudent(ctx context.Context, db *sql.DB, filter helpers.Filter, studentID uuid.UUID) ([]StudentEnrollModel, error) {
+func GetAllStudentEnrollByOneStudent(ctx context.Context, db *sql.DB, filter helpers.Filter) ([]StudentEnrollModel, error) {
 
-	var searchQuery string
+	var filters []string
 
-	if filter.Search != "" {
-		searchQuery = fmt.Sprintf(`WHERE LOWER(name) LIKE LOWER('%%%s%%')`, filter.Search)
+	if filter.StudentID != uuid.Nil {
+		filters = append(filters, fmt.Sprintf(`
+			student_id = '%s'`,
+			filter.SessionID))
+	}
+	filterJoin := strings.Join(filters, " AND ")
+	if filterJoin != "" {
+		filterJoin = fmt.Sprintf("WHERE %s", filterJoin)
 	}
 
 	query := fmt.Sprintf(`
@@ -193,12 +199,11 @@ func GetTimetableForStudent(ctx context.Context, db *sql.DB, filter helpers.Filt
 			se.updated_at
 		FROM student_enroll se
 		INNER JOIN session s ON se.session_id=s.id
-		WHERE student_id = $1
 		%s
 		ORDER BY s.day  %s, s.start_time %s
-		LIMIT $2 OFFSET $3`, searchQuery, filter.Dir, filter.Dir)
+		LIMIT $1 OFFSET $2`, filterJoin, filter.Dir, filter.Dir)
 
-	rows, err := db.QueryContext(ctx, query, studentID, filter.Limit, filter.Offset)
+	rows, err := db.QueryContext(ctx, query, filter.Limit, filter.Offset)
 
 	if err != nil {
 		return nil, err
@@ -351,7 +356,7 @@ func GetAllStudentEnrollByStudent(ctx context.Context, db *sql.DB, filter helper
 	if filter.StudentID != uuid.Nil {
 		filters = append(filters, fmt.Sprintf(`
 			student_id = '%s'`,
-			filter.SessionID))
+			filter.StudentID))
 	}
 	filterJoin := strings.Join(filters, " AND ")
 	if filterJoin != "" {

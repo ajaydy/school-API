@@ -43,6 +43,10 @@ type (
 		UpdatedBy uuid.UUID       `json:"updated_by"`
 		UpdatedAt time.Time       `json:"updated_at"`
 	}
+
+	LecturerUpdatePasswordResponse struct {
+		Message string `json:"message"`
+	}
 )
 
 func (s LecturerModel) Response(ctx context.Context, db *sql.DB, logger *helpers.Logger) (LecturerResponse, error) {
@@ -146,7 +150,7 @@ func GetOneLecturerByEmail(ctx context.Context, db *sql.DB, email string) (Lectu
 			updated_at
 		FROM lecturer
 		WHERE 
-			email = $1 AND is_active=true
+			email = $1 
 	`)
 
 	var lecturer LecturerModel
@@ -285,6 +289,30 @@ func (s *LecturerModel) Update(ctx context.Context, db *sql.DB) error {
 	err := db.QueryRowContext(ctx, query,
 		s.Name, s.ProgramID, s.Address, s.Email, s.PhoneNo, s.UpdatedBy, s.ID).Scan(
 		&s.ID, &s.CreatedAt, &s.UpdatedAt, &s.CreatedBy, &s.IsActive, &s.Gender,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+func (s *LecturerModel) PasswordUpdate(ctx context.Context, db *sql.DB) error {
+
+	query := fmt.Sprintf(`
+		UPDATE lecturer
+		SET
+			password = $1,
+			updated_at=NOW(),
+			updated_by=$2
+		WHERE id=$3
+		RETURNING id,created_at,updated_at,created_by,is_active`)
+
+	err := db.QueryRowContext(ctx, query,
+		s.Password, s.UpdatedBy, s.ID).Scan(
+		&s.ID, &s.CreatedAt, &s.UpdatedAt, &s.CreatedBy, &s.IsActive,
 	)
 
 	if err != nil {

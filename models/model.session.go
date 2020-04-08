@@ -67,7 +67,7 @@ func (s SessionModel) Response(ctx context.Context, db *sql.DB, logger *helpers.
 		return SessionResponse{}, nil
 	}
 
-	classrooms, err := classroom.Response(ctx, db, logger)
+	classroomResponse, err := classroom.Response(ctx, db, logger)
 	if err != nil {
 		logger.Err.Printf(`model.session.go/classroomResponse/%v`, err)
 		return SessionResponse{}, nil
@@ -78,7 +78,7 @@ func (s SessionModel) Response(ctx context.Context, db *sql.DB, logger *helpers.
 		return SessionResponse{}, nil
 	}
 
-	programs, err := program.Response(ctx, db, logger)
+	programResponse, err := program.Response(ctx, db, logger)
 	if err != nil {
 		logger.Err.Printf(`model.session.go/programResponse/%v`, err)
 		return SessionResponse{}, nil
@@ -90,7 +90,7 @@ func (s SessionModel) Response(ctx context.Context, db *sql.DB, logger *helpers.
 		return SessionResponse{}, nil
 	}
 
-	lecturers, err := lecturer.Response(ctx, db, logger)
+	lecturerResponse, err := lecturer.Response(ctx, db, logger)
 	if err != nil {
 		logger.Err.Printf(`model.session.go/lecturerResponse/%v`, err)
 		return SessionResponse{}, nil
@@ -101,10 +101,10 @@ func (s SessionModel) Response(ctx context.Context, db *sql.DB, logger *helpers.
 	return SessionResponse{
 		ID:        s.ID,
 		Subject:   subject.Response(),
-		Lecturer:  lecturers,
+		Lecturer:  lecturerResponse,
 		Intake:    intake.Response(),
-		Classroom: classrooms,
-		Program:   programs,
+		Classroom: classroomResponse,
+		Program:   programResponse,
 		Day:       day,
 		StartTime: s.StartTime,
 		EndTime:   s.EndTime,

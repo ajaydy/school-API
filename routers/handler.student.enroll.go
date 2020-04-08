@@ -40,14 +40,15 @@ func HandlerStudentEnrollAdd(w http.ResponseWriter, r *http.Request) (interface{
 	return studentEnrollService.Add(ctx, param)
 }
 
-func HandlerTimetable(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
+func HandlerStudentEnrollListByOneStudent(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
 	ctx := r.Context()
+
 	filter, err := helpers.ParseFilter(ctx, r)
 	if err != nil {
-		return nil, helpers.ErrorWrap(err, "handler", "HandlerTimetable/parseFilter",
+		return nil, helpers.ErrorWrap(err, "handler", "HandlerStudentEnrollListByOneStudent/parseFilter",
 			helpers.BadRequestMessage, http.StatusBadRequest)
 	}
-	return studentEnrollService.List(ctx, filter)
+	return studentEnrollService.ListByStudent(ctx, filter)
 }
 
 func HandlerStudentEnrollListBySession(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {

@@ -43,15 +43,15 @@ func (s ClassModel) Response(ctx context.Context, db *sql.DB, logger *helpers.Lo
 		return ClassResponse{}, nil
 	}
 
-	sessions, err := session.Response(ctx, db, logger)
+	sessionResponse, err := session.Response(ctx, db, logger)
 	if err != nil {
-		logger.Err.Printf(`model.class.go/SessionResponse/%v`, err)
+		logger.Err.Printf(`model.class.go/sessionResponse/%v`, err)
 		return ClassResponse{}, nil
 	}
 
 	return ClassResponse{
 		ID:        s.ID,
-		Session:   sessions,
+		Session:   sessionResponse,
 		Date:      s.Date,
 		IsDelete:  s.IsDelete,
 		CreatedBy: s.CreatedBy,

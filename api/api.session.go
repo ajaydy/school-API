@@ -90,7 +90,7 @@ func (s SessionModule) List(ctx context.Context, filter helpers.Filter) (interfa
 	for _, session := range sessions {
 		response, err := session.Response(ctx, s.db, s.logger)
 		if err != nil {
-			return nil, helpers.ErrorWrap(err, s.name, "List/Response", helpers.InternalServerError,
+			return nil, helpers.ErrorWrap(err, s.name, "List/SessionResponse", helpers.InternalServerError,
 				http.StatusInternalServerError)
 		}
 		sessionsResponse = append(sessionsResponse, response)
@@ -120,7 +120,7 @@ func (s SessionModule) ListByLecturer(ctx context.Context, filter helpers.Filter
 	for _, session := range sessions {
 		response, err := session.Response(ctx, s.db, s.logger)
 		if err != nil {
-			return nil, helpers.ErrorWrap(err, s.name, "ListByLecturer/Response", helpers.InternalServerError,
+			return nil, helpers.ErrorWrap(err, s.name, "ListByLecturer/SessionResponse", helpers.InternalServerError,
 				http.StatusInternalServerError)
 		}
 		sessionResponse = append(sessionResponse, response)
@@ -153,7 +153,7 @@ func (s SessionModule) Add(ctx context.Context, param SessionAddParam) (interfac
 	response, err := session.Response(ctx, s.db, s.logger)
 
 	if err != nil {
-		return nil, helpers.ErrorWrap(err, s.name, "Add/Response", helpers.InternalServerError,
+		return nil, helpers.ErrorWrap(err, s.name, "Add/SessionResponse", helpers.InternalServerError,
 			http.StatusInternalServerError)
 	}
 
@@ -186,7 +186,7 @@ func (s SessionModule) Update(ctx context.Context, param SessionUpdateParam) (in
 
 	response, err := session.Response(ctx, s.db, s.logger)
 	if err != nil {
-		return nil, helpers.ErrorWrap(err, s.name, "Update/Response", helpers.InternalServerError,
+		return nil, helpers.ErrorWrap(err, s.name, "Update/SessionResponse", helpers.InternalServerError,
 			http.StatusInternalServerError)
 	}
 

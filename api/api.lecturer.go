@@ -37,16 +37,6 @@ type (
 		Session  string                  `json:"session"`
 	}
 
-	LecturerAddResultParam struct {
-		StudentEnrollID uuid.UUID `json:"student_enroll_id"`
-		Marks           int       `json:"marks"`
-	}
-
-	LecturerUpdateResultParam struct {
-		StudentEnrollID uuid.UUID `json:"student_enroll_id"`
-		Marks           int       `json:"marks"`
-	}
-
 	LecturerAddParam struct {
 		Name      string    `json:"name" valid:"length(3|50),required"`
 		ProgramID uuid.UUID `json:"program_id" valid:"required"`
@@ -67,6 +57,13 @@ type (
 
 	LecturerDeleteParam struct {
 		ID uuid.UUID `json:"id"`
+	}
+
+	LecturerPasswordUpdateParam struct {
+		ID                 uuid.UUID `json:"id" valid:"required"`
+		CurrentPassword    string    `json:"current_password" valid:"required"`
+		NewPassword        string    `json:"new_password" valid:"length(5|50),required"`
+		ConfirmNewPassword string    `json:"confirm_new_password" valid:"required"`
 	}
 )
 
@@ -91,7 +88,7 @@ func (s LecturerModule) List(ctx context.Context, filter helpers.Filter) (interf
 	for _, lecturer := range lecturers {
 		response, err := lecturer.Response(ctx, s.db, s.logger)
 		if err != nil {
-			return nil, helpers.ErrorWrap(err, s.name, "List/Response", helpers.InternalServerError,
+			return nil, helpers.ErrorWrap(err, s.name, "List/LecturerResponse", helpers.InternalServerError,
 				http.StatusInternalServerError)
 		}
 		lecturerResponse = append(lecturerResponse, response)
@@ -142,7 +139,7 @@ func (s LecturerModule) Add(ctx context.Context, param LecturerAddParam) (interf
 	response, err := lecturer.Response(ctx, s.db, s.logger)
 
 	if err != nil {
-		return nil, helpers.ErrorWrap(err, s.name, "Add/Response", helpers.InternalServerError,
+		return nil, helpers.ErrorWrap(err, s.name, "Add/LecturerResponse", helpers.InternalServerError,
 			http.StatusInternalServerError)
 	}
 
@@ -172,7 +169,7 @@ func (s LecturerModule) Update(ctx context.Context, param LecturerUpdateParam) (
 	response, err := lecturer.Response(ctx, s.db, s.logger)
 
 	if err != nil {
-		return nil, helpers.ErrorWrap(err, s.name, "Update/Response", helpers.InternalServerError,
+		return nil, helpers.ErrorWrap(err, s.name, "Update/LecturerResponse", helpers.InternalServerError,
 			http.StatusInternalServerError)
 	}
 
@@ -242,5 +239,58 @@ func (s LecturerModule) Login(ctx context.Context, param LecturerLoginParam) (in
 	}
 
 	return lecturerSession, nil
+
+}
+
+func (s LecturerModule) PasswordUpdate(ctx context.Context, param LecturerPasswordUpdateParam) (interface{}, *helpers.Error) {
+
+	lecturer, err := models.GetOneLecturer(ctx, s.db, param.ID)
+	if err != nil {
+		return nil, helpers.ErrorWrap(err, s.name, "PasswordUpdate/GetOneLecturer", helpers.InternalServerError,
+			http.StatusInternalServerError)
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(lecturer.Password), []byte(param.CurrentPassword))
+
+	if err != nil {
+		return nil, helpers.ErrorWrap(errors.New("Current Password Is Incorrect!"), s.name,
+			"PasswordUpdate/CompareHashAndPassword",
+			helpers.IncorrectPasswordMessage,
+			http.StatusInternalServerError)
+	}
+
+	if param.NewPassword == param.CurrentPassword {
+		return nil, helpers.ErrorWrap(errors.New("New Password Cannot Be Same With Current Password"), s.name,
+			"PasswordUpdate/CurrentPasswordComparison", helpers.InternalServerError,
+			http.StatusInternalServerError)
+	}
+
+	if param.NewPassword != param.ConfirmNewPassword {
+		return nil, helpers.ErrorWrap(errors.New("New Password Does Not Match"), s.name,
+			"PasswordUpdate/NewPassword", helpers.InternalServerError,
+			http.StatusInternalServerError)
+	}
+
+	password, err := bcrypt.GenerateFromPassword([]byte(param.NewPassword), 12)
+
+	lecturer = models.LecturerModel{
+		ID:       param.ID,
+		Password: string(password),
+		UpdatedBy: uuid.NullUUID{
+			UUID:  uuid.FromStringOrNil(ctx.Value("user_id").(string)),
+			Valid: true,
+		},
+	}
+	err = lecturer.PasswordUpdate(ctx, s.db)
+	if err != nil {
+		return nil, helpers.ErrorWrap(err, s.name, "PasswordUpdate/Update", helpers.InternalServerError,
+			http.StatusInternalServerError)
+	}
+
+	lecturerResponse := models.LecturerUpdatePasswordResponse{
+		Message: "Password Successfully Changed",
+	}
+
+	return lecturerResponse, nil
 
 }

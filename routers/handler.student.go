@@ -130,3 +130,24 @@ func HandlerStudentDelete(w http.ResponseWriter, r *http.Request) (interface{}, 
 //	return studentService.Register(ctx, param)
 //}
 //
+
+func HandlerStudentPasswordUpdate(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
+
+	ctx := r.Context()
+
+	studentID := uuid.FromStringOrNil(ctx.Value("user_id").(string))
+
+	var param api.StudentPasswordUpdateParam
+
+	err := helpers.ParseBodyRequestData(ctx, r, &param)
+	if err != nil {
+
+		return nil, helpers.ErrorWrap(err, "handler", "HandlerStudentPasswordUpdate/ParseBodyRequestData",
+			helpers.BadRequestMessage, http.StatusBadRequest)
+
+	}
+
+	param.ID = studentID
+
+	return studentService.PasswordUpdate(ctx, param)
+}

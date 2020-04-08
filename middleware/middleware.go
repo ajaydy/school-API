@@ -95,3 +95,30 @@ func RolesMiddleware(next http.Handler, roles ...string) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
+func LoginMiddleware(next http.Handler, roles ...string) http.Handler {
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		ctx := r.Context()
+
+		sessionID := r.Header.Get("session")
+
+		session := session.Session{
+			SessionKey: sessionID,
+		}
+
+		sessionData, err := session.Get(ctx)
+
+		if err != nil {
+			if err == redis.ErrNil {
+				helpers.ErrorResponse(w, helpers.UnauthorizedMessage, http.StatusUnauthorized)
+				return
+			}
+			helpers.ErrorResponse(w, helpers.InternalServerError, http.StatusInternalServerError)
+			return
+
+		}
+
+	})
+
+}

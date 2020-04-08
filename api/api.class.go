@@ -28,7 +28,7 @@ type (
 		Date      time.Time `json:"date"`
 	}
 	ClassListBySessionParam struct {
-		ID uuid.UUID `json:"id"`
+		SessionID uuid.UUID `json:"id"`
 	}
 )
 
@@ -67,7 +67,7 @@ func (s ClassModule) ListBySession(ctx context.Context, filter helpers.Filter, p
 			Limit:  999,
 			Offset: 0,
 		},
-		SessionID: param.ID,
+		SessionID: param.SessionID,
 	})
 
 	if err != nil {
@@ -98,7 +98,7 @@ func (s ClassModule) Add(ctx context.Context, param ClassAddParam) (interface{},
 
 	err := class.Insert(ctx, s.db)
 	if err != nil {
-		return nil, helpers.ErrorWrap(err, s.name, "AddClass/Insert", helpers.InternalServerError,
+		return nil, helpers.ErrorWrap(err, s.name, "Add/ClassInsert", helpers.InternalServerError,
 			http.StatusInternalServerError)
 	}
 

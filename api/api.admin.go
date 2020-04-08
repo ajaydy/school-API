@@ -35,6 +35,13 @@ type (
 		Admin   models.AdminResponse `json:"admin"`
 		Session string               `json:"session"`
 	}
+
+	AdminPasswordUpdateParam struct {
+		ID                 uuid.UUID `json:"id" valid:"required"`
+		CurrentPassword    string    `json:"current_password" valid:"required"`
+		NewPassword        string    `json:"new_password" valid:"length(5|50),required"`
+		ConfirmNewPassword string    `json:"confirm_new_password" valid:"required"`
+	}
 )
 
 func NewAdminModule(db *sql.DB, cache *redis.Pool, logger *helpers.Logger) *AdminModule {
@@ -81,5 +88,58 @@ func (s AdminModule) Login(ctx context.Context, param AdminLoginParam) (interfac
 	}
 
 	return adminSession, nil
+
+}
+
+func (s AdminModule) PasswordUpdate(ctx context.Context, param AdminPasswordUpdateParam) (interface{}, *helpers.Error) {
+
+	admin, err := models.GetOneAdmin(ctx, s.db, param.ID)
+	if err != nil {
+		return nil, helpers.ErrorWrap(err, s.name, "PasswordUpdate/GetOneAdmin", helpers.InternalServerError,
+			http.StatusInternalServerError)
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(admin.Password), []byte(param.CurrentPassword))
+
+	if err != nil {
+		return nil, helpers.ErrorWrap(errors.New("Current Password Is Incorrect!"), s.name,
+			"PasswordUpdate/CompareHashAndPassword",
+			helpers.IncorrectPasswordMessage,
+			http.StatusInternalServerError)
+	}
+
+	if param.NewPassword == param.CurrentPassword {
+		return nil, helpers.ErrorWrap(errors.New("New Password Cannot Be Same With Current Password"), s.name,
+			"PasswordUpdate/CurrentPasswordComparison", helpers.InternalServerError,
+			http.StatusInternalServerError)
+	}
+
+	if param.NewPassword != param.ConfirmNewPassword {
+		return nil, helpers.ErrorWrap(errors.New("New Password Does Not Match"), s.name,
+			"PasswordUpdate/NewPassword", helpers.InternalServerError,
+			http.StatusInternalServerError)
+	}
+
+	password, err := bcrypt.GenerateFromPassword([]byte(param.NewPassword), 12)
+
+	admin = models.AdminModel{
+		ID:       param.ID,
+		Password: string(password),
+		UpdatedBy: uuid.NullUUID{
+			UUID:  uuid.FromStringOrNil(ctx.Value("user_id").(string)),
+			Valid: true,
+		},
+	}
+	err = admin.PasswordUpdate(ctx, s.db)
+	if err != nil {
+		return nil, helpers.ErrorWrap(err, s.name, "PasswordUpdate/Update", helpers.InternalServerError,
+			http.StatusInternalServerError)
+	}
+
+	adminResponse := models.AdminUpdatePasswordResponse{
+		Message: "Password Successfully Changed",
+	}
+
+	return adminResponse, nil
 
 }

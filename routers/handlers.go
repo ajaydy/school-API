@@ -40,6 +40,17 @@ func InitHandlers() *mux.Router {
 
 	apiV1 := r.PathPrefix("/api/v1").Subrouter()
 
+	//Update Password
+	apiV1.Handle("/admin/password-update", middleware.SessionMiddleware(middleware.RolesMiddleware(
+		HandlerFunc(HandlerAdminPasswordUpdate), session.ADMIN_ROLE))).Methods(http.MethodPut)
+	apiV1.Handle("/lecturer/password-update", middleware.SessionMiddleware(middleware.RolesMiddleware(
+		HandlerFunc(HandlerLecturerPasswordUpdate), session.LECTURER_ROLE))).Methods(http.MethodPut)
+	apiV1.Handle("/student/password-update", middleware.SessionMiddleware(middleware.RolesMiddleware(
+		HandlerFunc(HandlerStudentPasswordUpdate), session.STUDENT_ROLE))).Methods(http.MethodPut)
+
+	apiV1.Handle("/student/student-enrolls", middleware.SessionMiddleware(middleware.RolesMiddleware(
+		HandlerFunc(HandlerStudentEnrollListByOneStudent), session.STUDENT_ROLE))).Methods(http.MethodGet)
+
 	//StudentResults
 	apiV1.Handle("/student/results", middleware.SessionMiddleware(middleware.RolesMiddleware(
 		HandlerFunc(HandlerResultListByOneStudent), session.STUDENT_ROLE))).Methods(http.MethodGet)
@@ -102,8 +113,6 @@ func InitHandlers() *mux.Router {
 
 	apiV1.Handle("/results", middleware.SessionMiddleware(HandlerFunc(HandlerResultList))).Methods(http.MethodGet)
 	apiV1.Handle("/results/{id}", middleware.SessionMiddleware(HandlerFunc(HandlerResultDetail))).Methods(http.MethodGet)
-	apiV1.Handle("/results", middleware.SessionMiddleware(middleware.RolesMiddleware(
-		HandlerFunc(HandlerResultAdd), session.ADMIN_ROLE))).Methods(http.MethodPost)
 	apiV1.Handle("/results/{id}", middleware.SessionMiddleware(middleware.RolesMiddleware(
 		HandlerFunc(HandlerResultUpdate), session.ADMIN_ROLE))).Methods(http.MethodPut)
 	apiV1.Handle("/results/{id}", middleware.SessionMiddleware(middleware.RolesMiddleware(

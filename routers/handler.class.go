@@ -29,7 +29,7 @@ func HandlerClassListBySession(w http.ResponseWriter, r *http.Request) (interfac
 			helpers.BadRequestMessage, http.StatusBadRequest)
 
 	}
-	param.ID = sessionID
+	param.SessionID = sessionID
 
 	filter, err := helpers.ParseFilter(ctx, r)
 	if err != nil {

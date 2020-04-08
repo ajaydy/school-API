@@ -33,7 +33,7 @@ type (
 	}
 
 	AttendanceListByClassParam struct {
-		ID uuid.UUID `json:"id"`
+		ClassID uuid.UUID `json:"class_id"`
 	}
 )
 
@@ -144,7 +144,7 @@ func (s AttendanceModule) ListByClass(ctx context.Context, filter helpers.Filter
 			Offset: 0,
 		},
 
-		ClassID: param.ID,
+		ClassID: param.ClassID,
 	})
 	if err != nil {
 		return nil, helpers.ErrorWrap(err, s.name, "ListByClass/GetAllAttendanceByClass", helpers.InternalServerError,

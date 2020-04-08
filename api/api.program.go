@@ -63,7 +63,7 @@ func (s ProgramModule) List(ctx context.Context, filter helpers.Filter) (interfa
 	for _, program := range programs {
 		response, err := program.Response(ctx, s.db, s.logger)
 		if err != nil {
-			return nil, helpers.ErrorWrap(err, s.name, "List/ClassroomResponse", helpers.InternalServerError,
+			return nil, helpers.ErrorWrap(err, s.name, "List/ProgramResponse", helpers.InternalServerError,
 				http.StatusInternalServerError)
 		}
 		programsResponse = append(programsResponse, response)
@@ -83,7 +83,7 @@ func (s ProgramModule) Detail(ctx context.Context, param ProgramDetailParam) (in
 	response, err := program.Response(ctx, s.db, s.logger)
 
 	if err != nil {
-		return nil, helpers.ErrorWrap(err, s.name, "Detail/Response", helpers.InternalServerError,
+		return nil, helpers.ErrorWrap(err, s.name, "Detail/ProgramResponse", helpers.InternalServerError,
 			http.StatusInternalServerError)
 	}
 
@@ -108,7 +108,7 @@ func (s ProgramModule) Add(ctx context.Context, param ProgramAddParam) (interfac
 
 	response, err := program.Response(ctx, s.db, s.logger)
 	if err != nil {
-		return nil, helpers.ErrorWrap(err, s.name, "Add/Response", helpers.InternalServerError,
+		return nil, helpers.ErrorWrap(err, s.name, "Add/ProgramResponse", helpers.InternalServerError,
 			http.StatusInternalServerError)
 	}
 
@@ -137,7 +137,7 @@ func (s ProgramModule) Update(ctx context.Context, param ProgramUpdateParam) (in
 
 	response, err := program.Response(ctx, s.db, s.logger)
 	if err != nil {
-		return nil, helpers.ErrorWrap(err, s.name, "Update/Response", helpers.InternalServerError,
+		return nil, helpers.ErrorWrap(err, s.name, "Update/ProgramResponse", helpers.InternalServerError,
 			http.StatusInternalServerError)
 	}
 

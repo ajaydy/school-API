@@ -35,21 +35,22 @@ func HandlerResultList(w http.ResponseWriter, r *http.Request) (interface{}, *he
 	return resultService.List(ctx, filter)
 }
 
-func HandlerResultAdd(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
-
-	ctx := r.Context()
-
-	var param api.ResultAddParam
-
-	err := helpers.ParseBodyRequestData(ctx, r, &param)
-	if err != nil {
-		return nil, helpers.ErrorWrap(err, "handler", "HandlerResultAdd/ParseBodyRequestData",
-			helpers.BadRequestMessage, http.StatusBadRequest)
-
-	}
-
-	return resultService.Add(ctx, param)
-}
+//
+//func HandlerResultAdd(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
+//
+//	ctx := r.Context()
+//
+//	var param api.ResultAddParam
+//
+//	err := helpers.ParseBodyRequestData(ctx, r, &param)
+//	if err != nil {
+//		return nil, helpers.ErrorWrap(err, "handler", "HandlerResultAdd/ParseBodyRequestData",
+//			helpers.BadRequestMessage, http.StatusBadRequest)
+//
+//	}
+//
+//	return resultService.Add(ctx, param)
+//}
 
 func HandlerResultUpdate(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
 
@@ -121,7 +122,7 @@ func HandlerResultListByStudentEnroll(w http.ResponseWriter, r *http.Request) (i
 			helpers.BadRequestMessage, http.StatusBadRequest)
 
 	}
-	param.ID = studentEnrollID
+	param.StudentEnrollID = studentEnrollID
 
 	filter, err := helpers.ParseFilter(ctx, r)
 	if err != nil {

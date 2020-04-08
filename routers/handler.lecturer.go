@@ -111,3 +111,24 @@ func HandlerLecturerDelete(w http.ResponseWriter, r *http.Request) (interface{},
 
 	return lecturerService.Delete(ctx, param)
 }
+
+func HandlerLecturerPasswordUpdate(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
+
+	ctx := r.Context()
+
+	lecturerID := uuid.FromStringOrNil(ctx.Value("user_id").(string))
+
+	var param api.LecturerPasswordUpdateParam
+
+	err := helpers.ParseBodyRequestData(ctx, r, &param)
+	if err != nil {
+
+		return nil, helpers.ErrorWrap(err, "handler", "HandlerLecturerPasswordUpdate/ParseBodyRequestData",
+			helpers.BadRequestMessage, http.StatusBadRequest)
+
+	}
+
+	param.ID = lecturerID
+
+	return lecturerService.PasswordUpdate(ctx, param)
+}

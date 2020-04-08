@@ -100,7 +100,7 @@ func HandlerAttendanceListByClass(w http.ResponseWriter, r *http.Request) (inter
 
 	}
 
-	param.ID = classID
+	param.ClassID = classID
 
 	filter, err := helpers.ParseFilter(ctx, r)
 	if err != nil {

@@ -75,6 +75,13 @@ type (
 		Student models.StudentResponse `json:"student"`
 		Session string                 `json:"session"`
 	}
+
+	StudentPasswordUpdateParam struct {
+		ID                 uuid.UUID `json:"id" valid:"required"`
+		CurrentPassword    string    `json:"current_password" valid:"required"`
+		NewPassword        string    `json:"new_password" valid:"length(5|50),required"`
+		ConfirmNewPassword string    `json:"confirm_new_password" valid:"required"`
+	}
 )
 
 func NewStudentModule(db *sql.DB, cache *redis.Pool, logger *helpers.Logger) *StudentModule {
@@ -140,6 +147,7 @@ func NewStudentModule(db *sql.DB, cache *redis.Pool, logger *helpers.Logger) *St
 //	return studentSession, nil
 //}
 //
+
 func (s StudentModule) Login(ctx context.Context, param StudentLoginParam) (interface{}, *helpers.Error) {
 
 	student, err := models.GetOneStudentByCode(ctx, s.db, param.StudentCode)
@@ -169,7 +177,7 @@ func (s StudentModule) Login(ctx context.Context, param StudentLoginParam) (inte
 
 	err = session.Store(ctx)
 
-	students, err := student.Response(ctx, s.db, s.logger)
+	studentResponse, err := student.Response(ctx, s.db, s.logger)
 
 	if err != nil {
 		return nil, helpers.ErrorWrap(err, s.name, "Login/StudentResponse", helpers.InternalServerError,
@@ -177,7 +185,7 @@ func (s StudentModule) Login(ctx context.Context, param StudentLoginParam) (inte
 	}
 
 	studentSession := StudentWithSession{
-		Student: students,
+		Student: studentResponse,
 		Session: session.SessionKey,
 	}
 
@@ -185,8 +193,61 @@ func (s StudentModule) Login(ctx context.Context, param StudentLoginParam) (inte
 
 }
 
+func (s StudentModule) PasswordUpdate(ctx context.Context, param StudentPasswordUpdateParam) (interface{}, *helpers.Error) {
+
+	student, err := models.GetOneStudent(ctx, s.db, param.ID)
+	if err != nil {
+		return nil, helpers.ErrorWrap(err, s.name, "PasswordUpdate/GetOneStudent", helpers.InternalServerError,
+			http.StatusInternalServerError)
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(student.Password), []byte(param.CurrentPassword))
+
+	if err != nil {
+		return nil, helpers.ErrorWrap(errors.New("Current Password Is Incorrect!"), s.name,
+			"PasswordUpdate/CompareHashAndPassword",
+			helpers.IncorrectPasswordMessage,
+			http.StatusInternalServerError)
+	}
+
+	if param.NewPassword == param.CurrentPassword {
+		return nil, helpers.ErrorWrap(errors.New("New Password Cannot Be Same With Current Password"), s.name,
+			"PasswordUpdate/CurrentPasswordComparison", helpers.InternalServerError,
+			http.StatusInternalServerError)
+	}
+
+	if param.NewPassword != param.ConfirmNewPassword {
+		return nil, helpers.ErrorWrap(errors.New("New Password Does Not Match"), s.name,
+			"PasswordUpdate/NewPassword", helpers.InternalServerError,
+			http.StatusInternalServerError)
+	}
+
+	password, err := bcrypt.GenerateFromPassword([]byte(param.NewPassword), 12)
+
+	student = models.StudentModel{
+		ID:       param.ID,
+		Password: string(password),
+		UpdatedBy: uuid.NullUUID{
+			UUID:  uuid.FromStringOrNil(ctx.Value("user_id").(string)),
+			Valid: true,
+		},
+	}
+	err = student.PasswordUpdate(ctx, s.db)
+	if err != nil {
+		return nil, helpers.ErrorWrap(err, s.name, "PasswordUpdate/Update", helpers.InternalServerError,
+			http.StatusInternalServerError)
+	}
+
+	studentResponse := models.StudentUpdatePasswordResponse{
+		Message: "Password Successfully Changed",
+	}
+
+	return studentResponse, nil
+
+}
+
 func (s StudentModule) List(ctx context.Context, filter helpers.Filter) (interface{}, *helpers.Error) {
-	student, err := models.GetAllStudent(ctx, s.db, filter)
+	students, err := models.GetAllStudent(ctx, s.db, filter)
 
 	if err != nil {
 		return nil, helpers.ErrorWrap(err, s.name, "List/GetAllStudent", helpers.InternalServerError,
@@ -194,8 +255,8 @@ func (s StudentModule) List(ctx context.Context, filter helpers.Filter) (interfa
 	}
 
 	var studentsResponse []models.StudentResponse
-	for _, students := range student {
-		response, err := students.Response(ctx, s.db, s.logger)
+	for _, student := range students {
+		response, err := student.Response(ctx, s.db, s.logger)
 		if err != nil {
 			return nil, helpers.ErrorWrap(err, s.name, "List/StudentResponse", helpers.InternalServerError,
 				http.StatusInternalServerError)

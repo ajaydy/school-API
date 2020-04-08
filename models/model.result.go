@@ -45,7 +45,7 @@ func (s ResultModel) Response(ctx context.Context, db *sql.DB, logger *helpers.L
 		return ResultResponse{}, nil
 	}
 
-	studentEnrolls, err := studentEnroll.Response(ctx, db, logger)
+	studentEnrollResponse, err := studentEnroll.Response(ctx, db, logger)
 	if err != nil {
 		logger.Err.Printf(`model.result.go/studentEnrollResponse/%v`, err)
 		return ResultResponse{}, nil
@@ -53,7 +53,7 @@ func (s ResultModel) Response(ctx context.Context, db *sql.DB, logger *helpers.L
 
 	return ResultResponse{
 		ID:            s.ID,
-		StudentEnroll: studentEnrolls,
+		StudentEnroll: studentEnrollResponse,
 		Grade:         s.Grade,
 		Marks:         s.Marks,
 		IsDelete:      s.IsDelete,

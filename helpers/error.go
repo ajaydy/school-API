@@ -52,4 +52,5 @@ const (
 	IncorrectPasswordMessage    = "Incorrect Password"
 	IncorrectMonthMessage       = "Incorrect Month"
 	ForbiddenMessage            = "Forbidden Message"
+	PasswordChangedMessage      = "Password Changed"
 )
