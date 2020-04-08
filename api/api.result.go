@@ -36,6 +36,10 @@ type (
 	ResultDeleteParam struct {
 		ID uuid.UUID `json:"id"`
 	}
+
+	ResultListByStudentEnrollParam struct {
+		ID uuid.UUID `json:"id"`
+	}
 )
 
 func NewResultModule(db *sql.DB, cache *redis.Pool, logger *helpers.Logger) *ResultModule {
@@ -90,10 +94,17 @@ func (s ResultModule) ListByOneStudent(ctx context.Context, filter helpers.Filte
 
 	studentID := uuid.FromStringOrNil(ctx.Value("user_id").(string))
 
-	results, err := models.GetAllResultForOneStudent(ctx, s.db, filter, studentID)
+	results, err := models.GetAllResultForOneStudent(ctx, s.db, helpers.Filter{
+		FilterOption: helpers.FilterOption{
+			Limit:  999,
+			Offset: 0,
+		},
+		StudentID: studentID,
+	})
 
 	if err != nil {
-		return nil, helpers.ErrorWrap(err, s.name, "ListByOneStudent/GetAllResult", helpers.InternalServerError,
+		return nil, helpers.ErrorWrap(err, s.name, "ListByOneStudent/GetAllResultForOneStudent",
+			helpers.InternalServerError,
 			http.StatusInternalServerError)
 	}
 
@@ -187,57 +198,90 @@ func (s ResultModule) Delete(ctx context.Context, param ResultDeleteParam) (inte
 
 }
 
-func (s LecturerModule) LecturerAddResult(ctx context.Context, param LecturerAddResultParam) (interface{}, *helpers.Error) {
+func (s ResultModule) ListByStudentEnroll(ctx context.Context, filter helpers.Filter,
+	param ResultListByStudentEnrollParam) (
+	interface{}, *helpers.Error) {
 
-	score := util.GetGrade(param.Marks)
-
-	result := models.ResultModel{
-		StudentEnrollID: param.StudentEnrollID,
-		Marks:           param.Marks,
-		Grade:           score,
-		CreatedBy:       uuid.NewV4(),
-	}
-
-	err := result.Insert(ctx, s.db)
-	if err != nil {
-		return nil, helpers.ErrorWrap(err, s.name, "LecturerAddResult/Insert", helpers.InternalServerError,
-			http.StatusInternalServerError)
-	}
-
-	results, err := result.Response(ctx, s.db, s.logger)
-	if err != nil {
-		return nil, helpers.ErrorWrap(err, s.name, "LecturerAddResult/Response", helpers.InternalServerError,
-			http.StatusInternalServerError)
-	}
-
-	return results, nil
-}
-
-func (s ResultModule) LecturerUpdateResult(ctx context.Context, param LecturerUpdateResultParam) (interface{}, *helpers.Error) {
-
-	score := util.GetGrade(param.Marks)
-
-	result := models.ResultModel{
-		StudentEnrollID: param.StudentEnrollID,
-		Marks:           param.Marks,
-		Grade:           score,
-		UpdatedBy: uuid.NullUUID{
-			UUID:  uuid.FromStringOrNil(ctx.Value("user_id").(string)),
-			Valid: true,
+	results, err := models.GetAllResultByStudentEnroll(ctx, s.db, helpers.Filter{
+		FilterOption: helpers.FilterOption{
+			Limit:  999,
+			Offset: 0,
 		},
-	}
 
-	err := result.UpdateByStudentEnroll(ctx, s.db)
+		StudentEnrollID: param.ID,
+	})
+
 	if err != nil {
-		return nil, helpers.ErrorWrap(err, s.name, " LecturerUpdateResult/Update", helpers.InternalServerError,
+		return nil, helpers.ErrorWrap(err, s.name, "ListByStudentEnroll/GetAllResultByStudentEnroll",
+			helpers.InternalServerError,
 			http.StatusInternalServerError)
 	}
 
-	results, err := result.Response(ctx, s.db, s.logger)
-	if err != nil {
-		return nil, helpers.ErrorWrap(err, s.name, "LecturerUpdateResult/Response", helpers.InternalServerError,
-			http.StatusInternalServerError)
+	var resultsResponse []models.ResultResponse
+	for _, result := range results {
+		response, err := result.Response(ctx, s.db, s.logger)
+		if err != nil {
+			return nil, helpers.ErrorWrap(err, s.name, "ListByStudentEnroll/ResultResponse",
+				helpers.InternalServerError,
+				http.StatusInternalServerError)
+		}
+		resultsResponse = append(resultsResponse, response)
 	}
 
-	return results, nil
+	return resultsResponse, nil
 }
+
+//func (s LecturerModule) LecturerAddResult(ctx context.Context, param LecturerAddResultParam) (interface{}, *helpers.Error) {
+//
+//	score := util.GetGrade(param.Marks)
+//
+//	result := models.ResultModel{
+//		StudentEnrollID: param.StudentEnrollID,
+//		Marks:           param.Marks,
+//		Grade:           score,
+//		CreatedBy:       uuid.NewV4(),
+//	}
+//
+//	err := result.Insert(ctx, s.db)
+//	if err != nil {
+//		return nil, helpers.ErrorWrap(err, s.name, "LecturerAddResult/Insert", helpers.InternalServerError,
+//			http.StatusInternalServerError)
+//	}
+//
+//	results, err := result.Response(ctx, s.db, s.logger)
+//	if err != nil {
+//		return nil, helpers.ErrorWrap(err, s.name, "LecturerAddResult/Response", helpers.InternalServerError,
+//			http.StatusInternalServerError)
+//	}
+//
+//	return results, nil
+//}
+//
+//func (s ResultModule) LecturerUpdateResult(ctx context.Context, param LecturerUpdateResultParam) (interface{}, *helpers.Error) {
+//
+//	score := util.GetGrade(param.Marks)
+//
+//	result := models.ResultModel{
+//		StudentEnrollID: param.StudentEnrollID,
+//		Marks:           param.Marks,
+//		Grade:           score,
+//		UpdatedBy: uuid.NullUUID{
+//			UUID:  uuid.FromStringOrNil(ctx.Value("user_id").(string)),
+//			Valid: true,
+//		},
+//	}
+//
+//	err := result.UpdateByStudentEnroll(ctx, s.db)
+//	if err != nil {
+//		return nil, helpers.ErrorWrap(err, s.name, " LecturerUpdateResult/Update", helpers.InternalServerError,
+//			http.StatusInternalServerError)
+//	}
+//
+//	results, err := result.Response(ctx, s.db, s.logger)
+//	if err != nil {
+//		return nil, helpers.ErrorWrap(err, s.name, "LecturerUpdateResult/Response", helpers.InternalServerError,
+//			http.StatusInternalServerError)
+//	}
+//
+//	return results, nil
+//}

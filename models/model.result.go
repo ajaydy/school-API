@@ -7,6 +7,7 @@ import (
 	"github.com/lib/pq"
 	uuid "github.com/satori/go.uuid"
 	"school/helpers"
+	"strings"
 	"time"
 )
 
@@ -175,27 +176,34 @@ func GetAllResult(ctx context.Context, db *sql.DB, filter helpers.Filter) ([]Res
 
 func GetAllResultByStudentEnroll(ctx context.Context, db *sql.DB, filter helpers.Filter) ([]ResultModel, error) {
 
+	var filters []string
+
+	if filter.StudentEnrollID != uuid.Nil {
+		filters = append(filters, fmt.Sprintf(`
+			student_enroll_id = '%s'`,
+			filter.StudentEnrollID))
+	}
+	filterJoin := strings.Join(filters, " AND ")
+	if filterJoin != "" {
+		filterJoin = fmt.Sprintf("WHERE %s", filterJoin)
+	}
+
 	query := fmt.Sprintf(`
 		SELECT
-			r.id,
+			id,
 			student_enroll_id,
 			grade,
 			marks,
-			r.is_delete,
-			r.created_by,
-			r.created_at,
-			r.updated_by,
-			r.updated_at
+			is_delete,
+			created_by,
+			created_at,
+			updated_by,
+			updated_at
 		FROM result r
-		INNER JOIN student_enroll se ON r.student_enroll_id = se.id
-		INNER JOIN session s ON se.session_id = s.id
-		INNER JOIN subject su ON s.subject_id = su.id
-		WHERE 
-		student_enroll_id = $1 AND r.is_delete = false
-		ORDER BY  su.name %s
-		LIMIT $2 OFFSET $3`, filter.Dir)
-
-	rows, err := db.QueryContext(ctx, query, filter.StudentEnrollID, filter.Limit, filter.Offset)
+		%s
+		LIMIT $1 OFFSET $2`, filterJoin)
+	fmt.Println(query)
+	rows, err := db.QueryContext(ctx, query, filter.Limit, filter.Offset)
 
 	if err != nil {
 		return nil, err
@@ -225,16 +233,25 @@ func GetAllResultByStudentEnroll(ctx context.Context, db *sql.DB, filter helpers
 
 }
 
-func GetAllResultForOneStudent(ctx context.Context, db *sql.DB, filter helpers.Filter, studentID uuid.UUID) ([]ResultModel, error) {
+func GetAllResultForOneStudent(ctx context.Context, db *sql.DB, filter helpers.Filter) ([]ResultModel, error) {
 
-	var searchQuery string
+	var filters []string
 
 	if filter.Search != "" {
-		searchQuery = fmt.Sprintf(`WHERE LOWER(name) LIKE LOWER('%%%s%%')`, filter.Search)
+		filters = append(filters, fmt.Sprintf(`
+		LOWER(su.name) LIKE LOWER('%%%s%%')`,
+			filter.Search))
 	}
 
-	fmt.Println(studentID)
-
+	if filter.StudentID != uuid.Nil {
+		filters = append(filters, fmt.Sprintf(`
+			se.student_id = '%s'`,
+			filter.StudentID))
+	}
+	filterJoin := strings.Join(filters, " AND ")
+	if filterJoin != "" {
+		filterJoin = fmt.Sprintf("WHERE %s", filterJoin)
+	}
 	query := fmt.Sprintf(`
 		SELECT
 			r.id,
@@ -250,13 +267,11 @@ func GetAllResultForOneStudent(ctx context.Context, db *sql.DB, filter helpers.F
 		INNER JOIN student_enroll se ON r.student_enroll_id = se.id
 		INNER JOIN session s ON se.session_id = s.id
 		INNER JOIN subject su ON s.subject_id = su.id
-		WHERE 
-		se.student_id = $1
 		%s
 		ORDER BY  su.name %s
-		LIMIT $2 OFFSET $3`, searchQuery, filter.Dir)
+		LIMIT $1 OFFSET $2`, filterJoin, filter.Dir)
 
-	rows, err := db.QueryContext(ctx, query, studentID, filter.Limit, filter.Offset)
+	rows, err := db.QueryContext(ctx, query, filter.Limit, filter.Offset)
 	fmt.Println(query)
 	if err != nil {
 		return nil, err

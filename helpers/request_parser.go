@@ -34,6 +34,7 @@ type (
 		LecturerID      uuid.UUID `json:"lecturer_id"schema:"lecturer_id"`
 		IntakeID        uuid.UUID `json:"intake_id" schema:"intake_id"`
 		ProgramID       uuid.UUID `json:"program_id" schema:"program_id"`
+		ResultID        uuid.UUID `json:"result_id" schema:"result_id"`
 	}
 )
 

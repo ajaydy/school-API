@@ -99,19 +99,46 @@ func HandlerResultDelete(w http.ResponseWriter, r *http.Request) (interface{}, *
 	return resultService.Delete(ctx, param)
 }
 
-func HandlerLecturerUpdateResult(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
+func HandlerResultListByStudentEnroll(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
 
 	ctx := r.Context()
 
-	var param api.LecturerUpdateResultParam
+	params := mux.Vars(r)
 
-	err := helpers.ParseBodyRequestData(ctx, r, &param)
+	studentEnrollID, err := uuid.FromString(params["id"])
+
+	if err != nil {
+		return nil, helpers.ErrorWrap(err, "handler", "HandlerResultListByStudentEnroll/parseID",
+			helpers.BadRequestMessage, http.StatusBadRequest)
+	}
+
+	var param api.ResultListByStudentEnrollParam
+
+	err = helpers.ParseBodyRequestData(ctx, r, &param)
 	if err != nil {
 
-		return nil, helpers.ErrorWrap(err, "handler", "HandlerLecturerUpdateResult/ParseBodyRequestData",
+		return nil, helpers.ErrorWrap(err, "handler", "HandlerResultListByStudentEnroll/ParseBodyRequestData",
 			helpers.BadRequestMessage, http.StatusBadRequest)
 
 	}
+	param.ID = studentEnrollID
 
-	return resultService.LecturerUpdateResult(ctx, param)
+	filter, err := helpers.ParseFilter(ctx, r)
+	if err != nil {
+		return nil, helpers.ErrorWrap(err, "handler", "HandlerResultListByStudentEnroll/parseFilter",
+			helpers.BadRequestMessage, http.StatusBadRequest)
+	}
+	return resultService.ListByStudentEnroll(ctx, filter, param)
+}
+
+func HandlerResultListByOneStudent(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
+
+	ctx := r.Context()
+
+	filter, err := helpers.ParseFilter(ctx, r)
+	if err != nil {
+		return nil, helpers.ErrorWrap(err, "handler", "HandlerResultListByStudentEnroll/parseFilter",
+			helpers.BadRequestMessage, http.StatusBadRequest)
+	}
+	return resultService.ListByOneStudent(ctx, filter)
 }

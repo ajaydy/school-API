@@ -40,45 +40,33 @@ func InitHandlers() *mux.Router {
 
 	apiV1 := r.PathPrefix("/api/v1").Subrouter()
 
-	//apiV1.Use(middleware.BasicAuthMiddleware)
-	//apiV1.Handle("/student/timetable", middleware.SessionMiddleware(middleware.RolesMiddleware(
-	//	HandlerFunc(HandlerTimetable), session.STUDENT_ROLE))).Methods(http.MethodGet)
-	//apiV1.Handle("/student/enroll", middleware.SessionMiddleware(middleware.RolesMiddleware(
-	//	HandlerFunc(HandlerAddStudentEnroll), session.STUDENT_ROLE))).Methods(http.MethodPost)
-	//apiV1.Handle("/student/result", middleware.SessionMiddleware(middleware.RolesMiddleware(
-	//	HandlerFunc(HandlerResult), session.STUDENT_ROLE))).Methods(http.MethodGet)
-	//apiV1.Handle("/student/{id}", middleware.SessionMiddleware(middleware.RolesMiddleware(
-	//	HandlerFunc(HandlerUpdateStudent), session.STUDENT_ROLE))).Methods(http.MethodPut)
-	//apiV1.Handle("/student/{id}", HandlerFunc(HandlerStudentDetail)).Methods(http.MethodGet)
-	//apiV1.Handle("/student", HandlerFunc(HandlerStudent)).Methods(http.MethodGet)
-	//apiV1.Handle("/student/add", HandlerFunc(HandlerAddStudent)).Methods(http.MethodPost)
-	//apiV1.Handle("/student/login", HandlerFunc(HandlerLoginStudent)).Methods(http.MethodPost)
+	//StudentResults
+	apiV1.Handle("/student/results", middleware.SessionMiddleware(middleware.RolesMiddleware(
+		HandlerFunc(HandlerResultListByOneStudent), session.STUDENT_ROLE))).Methods(http.MethodGet)
 
-	apiV1.Handle("/lecturer/attendance/{id}/is-attend", middleware.SessionMiddleware(middleware.RolesMiddleware(
-		HandlerFunc(HandlerUpdateAttendanceIsAttend), session.LECTURER_ROLE))).Methods(http.MethodPut)
-	apiV1.Handle("/lecturer/session/class/attendance", middleware.SessionMiddleware(middleware.RolesMiddleware(
-		HandlerFunc(HandlerAttendanceByClass), session.LECTURER_ROLE))).Methods(http.MethodGet)
-	apiV1.Handle("/lecturer/session/class/attendance", middleware.SessionMiddleware(middleware.RolesMiddleware(
-		HandlerFunc(HandlerAddAttendance), session.LECTURER_ROLE))).Methods(http.MethodPost)
-	apiV1.Handle("/lecturer/session/class/attendance", middleware.SessionMiddleware(middleware.RolesMiddleware(
-		HandlerFunc(HandlerAttendanceByClass), session.LECTURER_ROLE))).Methods(http.MethodGet)
-	apiV1.Handle("/lecturer/session/class", middleware.SessionMiddleware(middleware.RolesMiddleware(
-		HandlerFunc(HandlerClassBySession), session.LECTURER_ROLE))).Methods(http.MethodGet)
-	apiV1.Handle("/lecturer/session/student/result", middleware.SessionMiddleware(middleware.RolesMiddleware(
-		HandlerFunc(HandlerLecturerUpdateResult), session.LECTURER_ROLE))).Methods(http.MethodPut)
-	apiV1.Handle("/lecturer/session/student", middleware.SessionMiddleware(middleware.RolesMiddleware(
-		HandlerFunc(HandlerStudentEnrollBySession), session.LECTURER_ROLE))).Methods(http.MethodGet)
-	apiV1.Handle("/lecturer/session", middleware.SessionMiddleware(middleware.RolesMiddleware(
-		HandlerFunc(HandlerSessionByLecturer), session.LECTURER_ROLE))).Methods(http.MethodGet)
+	//LecturerUpdateAttendance
+	apiV1.Handle("/lecturer/attendances/{id}", middleware.SessionMiddleware(middleware.RolesMiddleware(
+		HandlerFunc(HandlerAttendanceUpdate), session.LECTURER_ROLE))).Methods(http.MethodPut)
+	apiV1.Handle("/lecturer/classes/{id}/attendances", middleware.SessionMiddleware(middleware.RolesMiddleware(
+		HandlerFunc(HandlerAttendanceListByClass), session.LECTURER_ROLE))).Methods(http.MethodGet)
+	apiV1.Handle("/lecturer/sessions/{id}/classes", middleware.SessionMiddleware(middleware.RolesMiddleware(
+		HandlerFunc(HandlerClassListBySession), session.LECTURER_ROLE))).Methods(http.MethodGet)
+	//LecturerUpdateResult
+	apiV1.Handle("/lecturer/results/{id}", middleware.SessionMiddleware(middleware.RolesMiddleware(
+		HandlerFunc(HandlerResultUpdate), session.LECTURER_ROLE))).Methods(http.MethodPut)
+	apiV1.Handle("/lecturer/student-enrolls/{id}/results", middleware.SessionMiddleware(middleware.RolesMiddleware(
+		HandlerFunc(HandlerResultListByStudentEnroll), session.LECTURER_ROLE))).Methods(http.MethodGet)
+	apiV1.Handle("/lecturer/sessions/{id}/student-enrolls", middleware.SessionMiddleware(middleware.RolesMiddleware(
+		HandlerFunc(HandlerStudentEnrollListBySession), session.LECTURER_ROLE))).Methods(http.MethodGet)
 
-	//apiV1.Handle("/students", middleware.SessionMiddleware(middleware.RolesMiddleware(
-	//	HandlerFunc(HandlerStudent), session.ADMIN_ROLE, session.STUDENT_ROLE, session.LECTURER_ROLE))).Methods(http.MethodGet)
-	//apiV1.Handle("/admin/student/{id}", middleware.SessionMiddleware(middleware.RolesMiddleware(
-	//	HandlerFunc(HandlerStudentDetail), session.ADMIN_ROLE))).Methods(http.MethodGet)
-	//apiV1.Handle("/admin/student/{id}/update", middleware.SessionMiddleware(middleware.RolesMiddleware(
-	//	HandlerFunc(HandlerStudentDetail), session.ADMIN_ROLE))).Methods(http.MethodGet)
-	//apiV1.Handle("/admin/student/{id}", middleware.SessionMiddleware(middleware.RolesMiddleware(
-	//	HandlerFunc(HandlerStudentDetail), session.ADMIN_ROLE))).Methods(http.MethodGet)
+	apiV1.Handle("/lecturer/sessions", middleware.SessionMiddleware(middleware.RolesMiddleware(
+		HandlerFunc(HandlerSessionListByLecturer), session.LECTURER_ROLE))).Methods(http.MethodGet)
+
+	apiV1.Handle("/attendances", middleware.SessionMiddleware(middleware.RolesMiddleware(
+		HandlerFunc(HandlerAttendanceList), session.ADMIN_ROLE, session.LECTURER_ROLE))).Methods(http.MethodGet)
+
+	apiV1.Handle("/classes", middleware.SessionMiddleware(middleware.RolesMiddleware(
+		HandlerFunc(HandlerClassAdd), session.ADMIN_ROLE))).Methods(http.MethodPost)
 
 	apiV1.Handle("/student-enrolls", middleware.SessionMiddleware(middleware.RolesMiddleware(
 		HandlerFunc(HandlerStudentEnrollAdd), session.STUDENT_ROLE))).Methods(http.MethodPost)

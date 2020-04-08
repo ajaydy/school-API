@@ -7,6 +7,7 @@ import (
 	"github.com/lib/pq"
 	uuid "github.com/satori/go.uuid"
 	"school/helpers"
+	"strings"
 	"time"
 )
 
@@ -99,12 +100,17 @@ func GetOneClass(ctx context.Context, db *sql.DB, classID uuid.UUID) (ClassModel
 
 func GetAllClassBySession(ctx context.Context, db *sql.DB, filter helpers.Filter) ([]ClassModel, error) {
 
-	var searchQuery string
+	var filters []string
 
-	if filter.Search != "" {
-		searchQuery = fmt.Sprintf(`AND LOWER(name) LIKE LOWER('%s')`, filter.Search)
+	if filter.SessionID != uuid.Nil {
+		filters = append(filters, fmt.Sprintf(`
+			session_id = '%s'`,
+			filter.SessionID))
 	}
-
+	filterJoin := strings.Join(filters, " AND ")
+	if filterJoin != "" {
+		filterJoin = fmt.Sprintf("WHERE %s", filterJoin)
+	}
 	query := fmt.Sprintf(`
 			SELECT
 			id,
@@ -116,14 +122,11 @@ func GetAllClassBySession(ctx context.Context, db *sql.DB, filter helpers.Filter
 			updated_by,
 			updated_at
 			FROM class
-			WHERE 
-			session_id = $1
 			%s
-			ORDER BY date %s
-			LIMIT $2 OFFSET $3`, searchQuery, filter.Dir)
+			LIMIT $1 OFFSET $2`, filterJoin)
 
-	rows, err := db.QueryContext(ctx, query, filter.SessionID, filter.Limit, filter.Offset)
-
+	rows, err := db.QueryContext(ctx, query, filter.Limit, filter.Offset)
+	fmt.Println(query)
 	if err != nil {
 		return nil, err
 	}

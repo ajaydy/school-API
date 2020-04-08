@@ -7,6 +7,7 @@ import (
 	"github.com/lib/pq"
 	uuid "github.com/satori/go.uuid"
 	"school/helpers"
+	"strings"
 	"time"
 )
 
@@ -109,34 +110,98 @@ func GetOneAttendance(ctx context.Context, db *sql.DB, attendanceID uuid.UUID) (
 
 }
 
-func GetAllAttendanceByClass(ctx context.Context, db *sql.DB, filter helpers.Filter) ([]AttendanceModel, error) {
+func GetAllAttendance(ctx context.Context, db *sql.DB, filter helpers.Filter) ([]AttendanceModel, error) {
 
-	var searchQuery string
+	var filters []string
+	if filter.ClassID != uuid.Nil {
+		filters = append(filters, fmt.Sprintf(`
+			class_id = '%s'`,
+			filter.ClassID))
+	}
+	if filter.StudentID != uuid.Nil {
+		filters = append(filters, fmt.Sprintf(`
+			student_id = '%s'`,
+			filter.StudentID))
+	}
 
-	if filter.Search != "" {
-		searchQuery = fmt.Sprintf(`WHERE LOWER(name) LIKE LOWER('%%%s%%')`, filter.Search)
+	filterJoin := strings.Join(filters, " AND ")
+	fmt.Println(filterJoin)
+	if filterJoin != "" {
+		filterJoin = fmt.Sprintf("WHERE %s", filterJoin)
 	}
 
 	query := fmt.Sprintf(`
 			SELECT
-			a.id,
+			id,
 			student_id,
 			class_id,
-			a.is_attend,
-			a.created_by,
-			a.created_at,
-			a.updated_by,
-			a.updated_at
-			FROM attendance	a
-			INNER JOIN student s ON a.student_id = s.id
-			WHERE 
-			class_id = $1
-			
-			%s
-			ORDER BY s.name %s
-			LIMIT $2 OFFSET $3`, searchQuery, filter.Dir)
+			is_attend,
+			created_by,
+			created_at,
+			updated_by,
+			updated_at
+			FROM attendance
+			%s	
+			ORDER BY class_id %s
+			LIMIT $1 OFFSET $2`, filterJoin, filter.Dir)
+	rows, err := db.QueryContext(ctx, query, filter.Limit, filter.Offset)
 
-	rows, err := db.QueryContext(ctx, query, filter.ClassID, filter.Limit, filter.Offset)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var attendances []AttendanceModel
+	for rows.Next() {
+		var attendance AttendanceModel
+		rows.Scan(
+			&attendance.ID,
+			&attendance.StudentID,
+			&attendance.ClassID,
+			&attendance.IsAttend,
+			&attendance.CreatedBy,
+			&attendance.CreatedAt,
+			&attendance.UpdatedBy,
+			&attendance.UpdatedAt,
+		)
+
+		attendances = append(attendances, attendance)
+	}
+
+	return attendances, nil
+
+}
+
+func GetAllAttendanceByClass(ctx context.Context, db *sql.DB, filter helpers.Filter) ([]AttendanceModel, error) {
+
+	var filters []string
+	if filter.ClassID != uuid.Nil {
+		filters = append(filters, fmt.Sprintf(`
+			class_id = '%s'`,
+			filter.ClassID))
+	}
+
+	filterJoin := strings.Join(filters, " AND ")
+	fmt.Println(filterJoin)
+	if filterJoin != "" {
+		filterJoin = fmt.Sprintf("WHERE %s", filterJoin)
+	}
+
+	query := fmt.Sprintf(`
+			SELECT
+			id,
+			student_id,
+			class_id,
+			is_attend,
+			created_by,
+			created_at,
+			updated_by,
+			updated_at
+			FROM attendance
+			%s
+			LIMIT $1 OFFSET $2`, filterJoin)
+	rows, err := db.QueryContext(ctx, query, filter.Limit, filter.Offset)
 
 	if err != nil {
 		return nil, err
@@ -190,7 +255,7 @@ func (s *AttendanceModel) Insert(ctx context.Context, db *sql.DB) error {
 
 }
 
-func (s *AttendanceModel) UpdateIsAttend(ctx context.Context, db *sql.DB) error {
+func (s *AttendanceModel) Update(ctx context.Context, db *sql.DB) error {
 
 	query := fmt.Sprintf(`
 		UPDATE attendance

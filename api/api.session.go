@@ -99,14 +99,20 @@ func (s SessionModule) List(ctx context.Context, filter helpers.Filter) (interfa
 	return sessionsResponse, nil
 }
 
-func (s SessionModule) SessionListByLecturer(ctx context.Context, filter helpers.Filter) (interface{}, *helpers.Error) {
+func (s SessionModule) ListByLecturer(ctx context.Context, filter helpers.Filter) (interface{}, *helpers.Error) {
 
 	lecturerID := uuid.FromStringOrNil(ctx.Value("user_id").(string))
 
-	sessions, err := models.GetAllSessionByLecturer(ctx, s.db, filter, lecturerID)
+	sessions, err := models.GetAllSessionByLecturer(ctx, s.db, helpers.Filter{
+		FilterOption: helpers.FilterOption{
+			Limit:  999,
+			Offset: 0,
+		},
+		LecturerID: lecturerID,
+	})
 
 	if err != nil {
-		return nil, helpers.ErrorWrap(err, s.name, "SessionListByLecturer/GetAllSessionByLecturer", helpers.InternalServerError,
+		return nil, helpers.ErrorWrap(err, s.name, "ListByLecturer/GetAllSessionByLecturer", helpers.InternalServerError,
 			http.StatusInternalServerError)
 	}
 
@@ -114,7 +120,7 @@ func (s SessionModule) SessionListByLecturer(ctx context.Context, filter helpers
 	for _, session := range sessions {
 		response, err := session.Response(ctx, s.db, s.logger)
 		if err != nil {
-			return nil, helpers.ErrorWrap(err, s.name, "SessionListByLecturer/Response", helpers.InternalServerError,
+			return nil, helpers.ErrorWrap(err, s.name, "ListByLecturer/Response", helpers.InternalServerError,
 				http.StatusInternalServerError)
 		}
 		sessionResponse = append(sessionResponse, response)

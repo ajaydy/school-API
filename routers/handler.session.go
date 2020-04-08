@@ -35,7 +35,7 @@ func HandlerSessionList(w http.ResponseWriter, r *http.Request) (interface{}, *h
 	return sessionService.List(ctx, filter)
 }
 
-func HandlerSessionByLecturer(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
+func HandlerSessionListByLecturer(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
 
 	ctx := r.Context()
 
@@ -44,7 +44,7 @@ func HandlerSessionByLecturer(w http.ResponseWriter, r *http.Request) (interface
 		return nil, helpers.ErrorWrap(err, "handler", " HandlerSessionByLecturer/parseFilter",
 			helpers.BadRequestMessage, http.StatusBadRequest)
 	}
-	return sessionService.SessionListByLecturer(ctx, filter)
+	return sessionService.ListByLecturer(ctx, filter)
 }
 
 func HandlerSessionAdd(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {

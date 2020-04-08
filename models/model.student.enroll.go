@@ -7,6 +7,7 @@ import (
 	"github.com/lib/pq"
 	uuid "github.com/satori/go.uuid"
 	"school/helpers"
+	"strings"
 	"time"
 )
 
@@ -228,30 +229,35 @@ func GetTimetableForStudent(ctx context.Context, db *sql.DB, filter helpers.Filt
 
 func GetAllStudentEnrollBySession(ctx context.Context, db *sql.DB, filter helpers.Filter) ([]StudentEnrollModel, error) {
 
-	var searchQuery string
+	var filters []string
 
-	if filter.Search != "" {
-		searchQuery = fmt.Sprintf(`WHERE LOWER(name) LIKE LOWER('%%%s%%')`, filter.Search)
+	if filter.SessionID != uuid.Nil {
+		filters = append(filters, fmt.Sprintf(`
+			session_id = '%s'`,
+			filter.SessionID))
+	}
+	filterJoin := strings.Join(filters, " AND ")
+	if filterJoin != "" {
+		filterJoin = fmt.Sprintf("WHERE %s", filterJoin)
 	}
 
 	query := fmt.Sprintf(`
 		SELECT
-			se.id,
+			id,
 			session_id,
 			student_id,
-			se.is_delete,
-			se.created_by,
-			se.created_at,
-			se.updated_by,
-			se.updated_at
-		FROM student_enroll se
-		INNER JOIN student s ON se.student_id = s.id
-		WHERE session_id = $1
+			is_delete,
+			created_by,
+			created_at,
+			updated_by,
+			updated_at
+		FROM student_enroll
 		%s
-		ORDER BY  s.name %s
-		LIMIT $2 OFFSET $3`, searchQuery, filter.Dir)
+		LIMIT $1 OFFSET $2`, filterJoin)
 
-	rows, err := db.QueryContext(ctx, query, filter.SessionID, filter.Limit, filter.Offset)
+	fmt.Println(query)
+
+	rows, err := db.QueryContext(ctx, query, filter.Limit, filter.Offset)
 
 	if err != nil {
 		return nil, err
@@ -299,4 +305,102 @@ func (s *StudentEnrollModel) Delete(ctx context.Context, db *sql.DB) error {
 	}
 
 	return nil
+}
+
+func GetOneStudentEnrollBySessionAndStudentID(ctx context.Context, db *sql.DB, sessionID uuid.UUID, studentID uuid.UUID) (
+	StudentEnrollModel, error) {
+
+	query := fmt.Sprintf(`
+	SELECT
+			id,
+			session_id,
+			student_id,
+			is_delete,
+			created_by,
+			created_at,
+			updated_by,
+			updated_at
+		FROM student_enroll se
+		WHERE session_id = $1
+		AND student_id = $2 `)
+
+	var student StudentEnrollModel
+	err := db.QueryRowContext(ctx, query, sessionID, studentID).Scan(
+		&student.ID,
+		&student.SessionID,
+		&student.StudentID,
+		&student.IsDelete,
+		&student.CreatedBy,
+		&student.CreatedAt,
+		&student.UpdatedBy,
+		&student.UpdatedAt,
+	)
+
+	if err != nil {
+		return StudentEnrollModel{}, err
+	}
+
+	return student, nil
+
+}
+
+func GetAllStudentEnrollByStudent(ctx context.Context, db *sql.DB, filter helpers.Filter) ([]StudentEnrollModel, error) {
+
+	var filters []string
+
+	if filter.StudentID != uuid.Nil {
+		filters = append(filters, fmt.Sprintf(`
+			student_id = '%s'`,
+			filter.SessionID))
+	}
+	filterJoin := strings.Join(filters, " AND ")
+	if filterJoin != "" {
+		filterJoin = fmt.Sprintf("AND %s", filterJoin)
+	}
+
+	query := fmt.Sprintf(`
+		SELECT
+			id,
+			session_id,
+			student_id,
+			is_delete,
+			created_by,
+			created_at,
+			updated_by,
+			updated_at
+		FROM student_enroll
+		WHERE is_delete = false
+		%s
+		LIMIT $1 OFFSET $2`, filterJoin)
+
+	fmt.Println(query)
+
+	rows, err := db.QueryContext(ctx, query, filter.Limit, filter.Offset)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var students []StudentEnrollModel
+	for rows.Next() {
+		var student StudentEnrollModel
+
+		rows.Scan(
+			&student.ID,
+			&student.SessionID,
+			&student.StudentID,
+			&student.IsDelete,
+			&student.CreatedBy,
+			&student.CreatedAt,
+			&student.UpdatedBy,
+			&student.UpdatedAt,
+		)
+
+		students = append(students, student)
+	}
+
+	return students, nil
+
 }

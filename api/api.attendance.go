@@ -31,6 +31,10 @@ type (
 		ID       uuid.UUID `json:"id"`
 		IsAttend bool      `json:"is_attend"`
 	}
+
+	AttendanceListByClassParam struct {
+		ID uuid.UUID `json:"id"`
+	}
 )
 
 func NewAttendanceModule(db *sql.DB, cache *redis.Pool, logger *helpers.Logger) *AttendanceModule {
@@ -60,25 +64,25 @@ func (s AttendanceModule) Detail(ctx context.Context, param AttendanceDetailPara
 	return response, nil
 }
 
-func (s AttendanceModule) ListByClass(ctx context.Context, filter helpers.Filter) (interface{}, *helpers.Error) {
-	attendance, err := models.GetAllAttendanceByClass(ctx, s.db, filter)
+func (s AttendanceModule) List(ctx context.Context, filter helpers.Filter) (interface{}, *helpers.Error) {
+	attendances, err := models.GetAllAttendance(ctx, s.db, filter)
 
 	if err != nil {
-		return nil, helpers.ErrorWrap(err, s.name, "ListByClass/GetAllAttendanceBySession", helpers.InternalServerError,
+		return nil, helpers.ErrorWrap(err, s.name, "List/GetAllAttendance", helpers.InternalServerError,
 			http.StatusInternalServerError)
 	}
 
-	var attendanceResponse []models.AttendanceResponse
-	for _, attendances := range attendance {
-		response, err := attendances.Response(ctx, s.db, s.logger)
+	var attendancesResponse []models.AttendanceResponse
+	for _, attendance := range attendances {
+		response, err := attendance.Response(ctx, s.db, s.logger)
 		if err != nil {
-			return nil, helpers.ErrorWrap(err, s.name, "ListByClass/ClassResponse", helpers.InternalServerError,
+			return nil, helpers.ErrorWrap(err, s.name, "List/AttendanceResponse", helpers.InternalServerError,
 				http.StatusInternalServerError)
 		}
-		attendanceResponse = append(attendanceResponse, response)
+		attendancesResponse = append(attendancesResponse, response)
 	}
 
-	return attendanceResponse, nil
+	return attendancesResponse, nil
 }
 
 func (s AttendanceModule) Add(ctx context.Context, param AttendanceAddParam) (interface{}, *helpers.Error) {
@@ -97,14 +101,14 @@ func (s AttendanceModule) Add(ctx context.Context, param AttendanceAddParam) (in
 
 	response, err := attendance.Response(ctx, s.db, s.logger)
 	if err != nil {
-		return nil, helpers.ErrorWrap(err, s.name, "Add/Response", helpers.InternalServerError,
+		return nil, helpers.ErrorWrap(err, s.name, "Add/AttendanceResponse", helpers.InternalServerError,
 			http.StatusInternalServerError)
 	}
 
 	return response, nil
 }
 
-func (s AttendanceModule) UpdateIsAttend(ctx context.Context, param AttendanceUpdateParam) (interface{}, *helpers.Error) {
+func (s AttendanceModule) Update(ctx context.Context, param AttendanceUpdateParam) (interface{}, *helpers.Error) {
 
 	attendance := models.AttendanceModel{
 		ID:       param.ID,
@@ -115,18 +119,47 @@ func (s AttendanceModule) UpdateIsAttend(ctx context.Context, param AttendanceUp
 		},
 	}
 
-	err := attendance.UpdateIsAttend(ctx, s.db)
+	err := attendance.Update(ctx, s.db)
 	if err != nil {
-		return nil, helpers.ErrorWrap(err, s.name, "UpdateIsAttend/Update", helpers.InternalServerError,
+		return nil, helpers.ErrorWrap(err, s.name, "Update/Update", helpers.InternalServerError,
 			http.StatusInternalServerError)
 	}
 
 	attendances, err := attendance.Response(ctx, s.db, s.logger)
 	if err != nil {
-		return nil, helpers.ErrorWrap(err, s.name, "UpdateIsAttend/AttendanceResponse", helpers.InternalServerError,
+		return nil, helpers.ErrorWrap(err, s.name, "Update/AttendanceResponse", helpers.InternalServerError,
 			http.StatusInternalServerError)
 	}
 
 	return attendances, nil
 
+}
+
+func (s AttendanceModule) ListByClass(ctx context.Context, filter helpers.Filter, param AttendanceListByClassParam) (
+	interface{}, *helpers.Error) {
+
+	attendances, err := models.GetAllAttendanceByClass(ctx, s.db, helpers.Filter{
+		FilterOption: helpers.FilterOption{
+			Limit:  999,
+			Offset: 0,
+		},
+
+		ClassID: param.ID,
+	})
+	if err != nil {
+		return nil, helpers.ErrorWrap(err, s.name, "ListByClass/GetAllAttendanceByClass", helpers.InternalServerError,
+			http.StatusInternalServerError)
+	}
+
+	var attendancesResponse []models.AttendanceResponse
+	for _, attendance := range attendances {
+		response, err := attendance.Response(ctx, s.db, s.logger)
+		if err != nil {
+			return nil, helpers.ErrorWrap(err, s.name, "ListByClass/AttendanceResponse", helpers.InternalServerError,
+				http.StatusInternalServerError)
+		}
+		attendancesResponse = append(attendancesResponse, response)
+	}
+
+	return attendancesResponse, nil
 }

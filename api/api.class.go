@@ -27,6 +27,9 @@ type (
 		SessionID uuid.UUID `json:"session_id"`
 		Date      time.Time `json:"date"`
 	}
+	ClassListBySessionParam struct {
+		ID uuid.UUID `json:"id"`
+	}
 )
 
 func NewClassModule(db *sql.DB, cache *redis.Pool, logger *helpers.Logger) *ClassModule {
@@ -56,8 +59,16 @@ func (s ClassModule) Detail(ctx context.Context, param ClassDetailParam) (interf
 	return response, nil
 }
 
-func (s ClassModule) ListBySession(ctx context.Context, filter helpers.Filter) (interface{}, *helpers.Error) {
-	class, err := models.GetAllClassBySession(ctx, s.db, filter)
+func (s ClassModule) ListBySession(ctx context.Context, filter helpers.Filter, param ClassListBySessionParam) (
+	interface{}, *helpers.Error) {
+
+	classes, err := models.GetAllClassBySession(ctx, s.db, helpers.Filter{
+		FilterOption: helpers.FilterOption{
+			Limit:  999,
+			Offset: 0,
+		},
+		SessionID: param.ID,
+	})
 
 	if err != nil {
 		return nil, helpers.ErrorWrap(err, s.name, "ListBySession/GetAllClassBySession", helpers.InternalServerError,
@@ -65,8 +76,8 @@ func (s ClassModule) ListBySession(ctx context.Context, filter helpers.Filter) (
 	}
 
 	var classResponse []models.ClassResponse
-	for _, classes := range class {
-		response, err := classes.Response(ctx, s.db, s.logger)
+	for _, class := range classes {
+		response, err := class.Response(ctx, s.db, s.logger)
 		if err != nil {
 			return nil, helpers.ErrorWrap(err, s.name, "ListBySession/ClassResponse", helpers.InternalServerError,
 				http.StatusInternalServerError)

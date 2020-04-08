@@ -32,6 +32,14 @@ type (
 	StudentEnrollDeleteParam struct {
 		ID uuid.UUID `json:"id"`
 	}
+
+	StudentEnrollListBySessionParam struct {
+		SessionID uuid.UUID `json:"session_id"`
+	}
+
+	StudentEnrollListByStudentParam struct {
+		StudentID uuid.UUID `json:"student_id"`
+	}
 )
 
 func NewStudentEnrollModule(db *sql.DB, cache *redis.Pool, logger *helpers.Logger) *StudentEnrollModule {
@@ -79,6 +87,20 @@ func (s StudentEnrollModule) Add(ctx context.Context, param StudentEnrollAddPara
 			http.StatusInternalServerError)
 	}
 
+	studentEnroll, err := models.GetOneStudentEnrollBySessionAndStudentID(ctx, s.db, param.SessionID, studentID)
+	if err != nil && err != sql.ErrNoRows {
+		return nil, helpers.ErrorWrap(err, s.name, "Add/GetOneStudentEnrollBySessionAndStudentID",
+			helpers.InternalServerError,
+			http.StatusInternalServerError)
+	}
+
+	if studentEnroll.SessionID == param.SessionID {
+		return nil, helpers.ErrorWrap(errors.New("You have already enroll this session"), s.name,
+			"Add/ValidationSession",
+			helpers.InternalServerError,
+			http.StatusInternalServerError)
+	}
+
 	sessionProgramID := session.ProgramID
 
 	fmt.Println(sessionProgramID)
@@ -113,8 +135,8 @@ func (s StudentEnrollModule) Add(ctx context.Context, param StudentEnrollAddPara
 			helpers.InternalServerError,
 			http.StatusInternalServerError)
 	}
-	//fmt.Println(now.Before(enrollDateEnd) && now.After(enrollDateStart))
-	studentEnroll := models.StudentEnrollModel{
+	////fmt.Println(now.Before(enrollDateEnd) && now.After(enrollDateStart))
+	studentEnroll = models.StudentEnrollModel{
 		SessionID: param.SessionID,
 		StudentID: uuid.FromStringOrNil(ctx.Value("user_id").(string)),
 		CreatedBy: uuid.FromStringOrNil(ctx.Value("user_id").(string)),
@@ -170,13 +192,21 @@ func (s StudentEnrollModule) List(ctx context.Context, filter helpers.Filter) (i
 	return studentResponse, nil
 }
 
-func (s StudentEnrollModule) StudentEnrollListBySession(ctx context.Context, filter helpers.Filter) (
+func (s StudentEnrollModule) ListBySession(ctx context.Context, filter helpers.Filter,
+	param StudentEnrollListBySessionParam) (
 	interface{}, *helpers.Error) {
 
-	studentEnrolls, err := models.GetAllStudentEnrollBySession(ctx, s.db, filter)
-	fmt.Println(filter)
+	studentEnrolls, err := models.GetAllStudentEnrollBySession(ctx, s.db, helpers.Filter{
+		FilterOption: helpers.FilterOption{
+			Limit:  999,
+			Offset: 0,
+		},
+
+		SessionID: param.SessionID,
+	})
+
 	if err != nil {
-		return nil, helpers.ErrorWrap(err, s.name, "StudentEnrollListBySession/GetAllStudentEnrollBySession", helpers.InternalServerError,
+		return nil, helpers.ErrorWrap(err, s.name, "ListBySession/GetAllStudentEnrollBySession", helpers.InternalServerError,
 			http.StatusInternalServerError)
 	}
 
@@ -184,7 +214,7 @@ func (s StudentEnrollModule) StudentEnrollListBySession(ctx context.Context, fil
 	for _, studentEnroll := range studentEnrolls {
 		response, err := studentEnroll.Response(ctx, s.db, s.logger)
 		if err != nil {
-			return nil, helpers.ErrorWrap(err, s.name, "StudentEnrollListBySession/StudentEnrollResponse", helpers.InternalServerError,
+			return nil, helpers.ErrorWrap(err, s.name, "ListBySession/StudentEnrollResponse", helpers.InternalServerError,
 				http.StatusInternalServerError)
 		}
 		studentEnrollsResponse = append(studentEnrollsResponse, response)
@@ -192,6 +222,37 @@ func (s StudentEnrollModule) StudentEnrollListBySession(ctx context.Context, fil
 
 	return studentEnrollsResponse, nil
 }
+
+//func (s StudentEnrollModule) ListByStudent(ctx context.Context, filter helpers.Filter,
+//	param StudentEnrollListByStudentParam) (
+//	interface{}, *helpers.Error) {
+//
+//	studentEnrolls, err := models.GetAllStudentEnrollByStudent(ctx, s.db, helpers.Filter{
+//		FilterOption: helpers.FilterOption{
+//			Limit:  999,
+//			Offset: 0,
+//		},
+//
+//		StudentID: param.StudentID,
+//	})
+//
+//	if err != nil {
+//		return nil, helpers.ErrorWrap(err, s.name, "ListByStudent/GetAllStudentEnrollByStudent", helpers.InternalServerError,
+//			http.StatusInternalServerError)
+//	}
+//
+//	var studentEnrollsResponse []models.StudentEnrollResponse
+//	for _, studentEnroll := range studentEnrolls {
+//		response, err := studentEnroll.Response(ctx, s.db, s.logger)
+//		if err != nil {
+//			return nil, helpers.ErrorWrap(err, s.name, "ListByStudent/StudentEnrollResponse", helpers.InternalServerError,
+//				http.StatusInternalServerError)
+//		}
+//		studentEnrollsResponse = append(studentEnrollsResponse, response)
+//	}
+//
+//	return studentEnrollsResponse, nil
+//}
 
 func (s StudentEnrollModule) Delete(ctx context.Context, param StudentEnrollDeleteParam) (interface{}, *helpers.Error) {
 

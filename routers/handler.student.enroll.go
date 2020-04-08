@@ -50,17 +50,55 @@ func HandlerTimetable(w http.ResponseWriter, r *http.Request) (interface{}, *hel
 	return studentEnrollService.List(ctx, filter)
 }
 
-func HandlerStudentEnrollBySession(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
+func HandlerStudentEnrollListBySession(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
 
 	ctx := r.Context()
 
-	filter, err := helpers.ParseFilter(ctx, r)
+	params := mux.Vars(r)
+
+	sessionID, err := uuid.FromString(params["id"])
+
 	if err != nil {
-		return nil, helpers.ErrorWrap(err, "handler", "HandlerStudentEnrollBySession/parseFilter",
+		return nil, helpers.ErrorWrap(err, "handler", "HandlerStudentEnrollListBySession/parseID",
 			helpers.BadRequestMessage, http.StatusBadRequest)
 	}
-	return studentEnrollService.StudentEnrollListBySession(ctx, filter)
+
+	var param api.StudentEnrollListBySessionParam
+
+	err = helpers.ParseBodyRequestData(ctx, r, &param)
+	if err != nil {
+
+		return nil, helpers.ErrorWrap(err, "handler", "HandlerStudentEnrollListBySession/ParseBodyRequestData",
+			helpers.BadRequestMessage, http.StatusBadRequest)
+
+	}
+	param.SessionID = sessionID
+
+	filter, err := helpers.ParseFilter(ctx, r)
+	if err != nil {
+		return nil, helpers.ErrorWrap(err, "handler", "HandlerStudentEnrollListBySession/parseFilter",
+			helpers.BadRequestMessage, http.StatusBadRequest)
+	}
+	return studentEnrollService.ListBySession(ctx, filter, param)
 }
+
+//func HandlerStudentEnrollListByStudent(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
+//
+//	ctx := r.Context()
+//
+//	studentID := uuid.FromStringOrNil(ctx.Value("user_id").(string))
+//
+//	var param api.StudentEnrollListByStudentParam
+//
+//	param.StudentID = studentID
+//
+//	filter, err := helpers.ParseFilter(ctx, r)
+//	if err != nil {
+//		return nil, helpers.ErrorWrap(err, "handler", "HandlerStudentEnrollListByStudent/parseFilter",
+//			helpers.BadRequestMessage, http.StatusBadRequest)
+//	}
+//	return studentEnrollService.ListByStudent(ctx, filter, param)
+//}
 
 func HandlerStudentEnrollDelete(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
 

@@ -8,14 +8,35 @@ import (
 	"school/helpers"
 )
 
-func HandlerClassBySession(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
+func HandlerClassListBySession(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
 	ctx := r.Context()
+
+	params := mux.Vars(r)
+
+	sessionID, err := uuid.FromString(params["id"])
+
+	if err != nil {
+		return nil, helpers.ErrorWrap(err, "handler", "HandlerClassBySession/parseID",
+			helpers.BadRequestMessage, http.StatusBadRequest)
+	}
+
+	var param api.ClassListBySessionParam
+
+	err = helpers.ParseBodyRequestData(ctx, r, &param)
+	if err != nil {
+
+		return nil, helpers.ErrorWrap(err, "handler", "HandlerClassBySession/ParseBodyRequestData",
+			helpers.BadRequestMessage, http.StatusBadRequest)
+
+	}
+	param.ID = sessionID
+
 	filter, err := helpers.ParseFilter(ctx, r)
 	if err != nil {
 		return nil, helpers.ErrorWrap(err, "handler", "HandlerClassBySession/parseFilter",
 			helpers.BadRequestMessage, http.StatusBadRequest)
 	}
-	return classService.ListBySession(ctx, filter)
+	return classService.ListBySession(ctx, filter, param)
 }
 
 func HandlerClassDetail(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {

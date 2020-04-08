@@ -165,6 +165,55 @@ func GetOneSession(ctx context.Context, db *sql.DB, sessionID uuid.UUID) (Sessio
 
 }
 
+func GetOneSessionByLecturer(ctx context.Context, db *sql.DB, lecturerID uuid.UUID) (SessionModel, error) {
+
+	query := fmt.Sprintf(`
+		SELECT
+			id,
+			subject_id,
+			lecturer_id,
+			intake_id,
+			classroom_id,
+			program_id,
+			day,
+			start_time,
+			end_time,
+			is_delete,
+			created_by,
+			created_at,
+			updated_by,
+			updated_at
+		FROM session
+		WHERE 
+			lecturer_id = $1
+	`)
+
+	var session SessionModel
+	err := db.QueryRowContext(ctx, query, lecturerID).Scan(
+		&session.ID,
+		&session.SubjectID,
+		&session.LecturerID,
+		&session.IntakeID,
+		&session.ClassroomID,
+		&session.ProgramID,
+		&session.Day,
+		&session.StartTime,
+		&session.EndTime,
+		&session.IsDelete,
+		&session.CreatedBy,
+		&session.CreatedAt,
+		&session.UpdatedBy,
+		&session.UpdatedAt,
+	)
+
+	if err != nil {
+		return SessionModel{}, err
+	}
+
+	return session, nil
+
+}
+
 func GetAllSession(ctx context.Context, db *sql.DB, filter helpers.Filter) ([]SessionModel, error) {
 
 	var subjectIDQuery string
@@ -177,6 +226,7 @@ func GetAllSession(ctx context.Context, db *sql.DB, filter helpers.Filter) ([]Se
 	if filter.IntakeID != uuid.Nil {
 		intakeIDQuery = fmt.Sprintf(`AND intake_id = '%s'`, filter.IntakeID)
 	}
+
 	//fmt.Println(filter.IntakeID != uuid.Nil)
 	//fmt.Println(filter.SubjectID != uuid.Nil)
 	//
@@ -240,17 +290,11 @@ func GetAllSession(ctx context.Context, db *sql.DB, filter helpers.Filter) ([]Se
 	return sessions, nil
 
 }
-func GetAllSessionByLecturer(ctx context.Context, db *sql.DB, filter helpers.Filter, lecturerID uuid.UUID) ([]SessionModel, error) {
-
-	var searchQuery string
-
-	if filter.Search != "" {
-		searchQuery = fmt.Sprintf(`WHERE LOWER(name) LIKE LOWER('%%%s%%')`, filter.Search)
-	}
+func GetAllSessionByLecturer(ctx context.Context, db *sql.DB, filter helpers.Filter) ([]SessionModel, error) {
 
 	query := fmt.Sprintf(`
 		SELECT
-			s.id,
+			id,
 			subject_id,
 			lecturer_id,
 			intake_id,
@@ -259,19 +303,16 @@ func GetAllSessionByLecturer(ctx context.Context, db *sql.DB, filter helpers.Fil
 			day,
 			start_time,
 			end_time,
-			s.is_delete,
-			s.created_by,
-			s.created_at,
-			s.updated_by,
-			s.updated_at
+			is_delete,
+			created_by,
+			created_at,
+			updated_by,
+			updated_at
 		FROM session s
-		INNER JOIN subject su ON s.subject_id = su.id
 		WHERE lecturer_id =$1
-		%s
-		ORDER BY  su.name %s
-		LIMIT $2 OFFSET $3`, searchQuery, filter.Dir)
+		LIMIT $2 OFFSET $3`)
 
-	rows, err := db.QueryContext(ctx, query, lecturerID, filter.Limit, filter.Offset)
+	rows, err := db.QueryContext(ctx, query, filter.LecturerID, filter.Limit, filter.Offset)
 
 	if err != nil {
 		return nil, err

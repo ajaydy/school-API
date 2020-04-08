@@ -24,17 +24,17 @@ func HandlerAttendanceDetail(w http.ResponseWriter, r *http.Request) (interface{
 	return attendanceService.Detail(ctx, param)
 }
 
-func HandlerAttendanceByClass(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
+func HandlerAttendanceList(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
 	ctx := r.Context()
 	filter, err := helpers.ParseFilter(ctx, r)
 	if err != nil {
-		return nil, helpers.ErrorWrap(err, "handler", "HandlerAttendanceByClass/parseFilter",
+		return nil, helpers.ErrorWrap(err, "handler", "HandlerAttendanceList/parseFilter",
 			helpers.BadRequestMessage, http.StatusBadRequest)
 	}
-	return attendanceService.ListByClass(ctx, filter)
+	return attendanceService.List(ctx, filter)
 }
 
-func HandlerAddAttendance(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
+func HandlerAttendanceAdd(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
 
 	ctx := r.Context()
 
@@ -50,7 +50,7 @@ func HandlerAddAttendance(w http.ResponseWriter, r *http.Request) (interface{}, 
 	return attendanceService.Add(ctx, param)
 }
 
-func HandlerUpdateAttendanceIsAttend(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
+func HandlerAttendanceUpdate(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
 
 	ctx := r.Context()
 
@@ -59,7 +59,7 @@ func HandlerUpdateAttendanceIsAttend(w http.ResponseWriter, r *http.Request) (in
 	attendanceID, err := uuid.FromString(params["id"])
 
 	if err != nil {
-		return nil, helpers.ErrorWrap(err, "handler", "HandlerUpdateAttendanceIsAttend/parseID",
+		return nil, helpers.ErrorWrap(err, "handler", "HandlerAttendanceUpdate/parseID",
 			helpers.BadRequestMessage, http.StatusBadRequest)
 	}
 
@@ -68,12 +68,44 @@ func HandlerUpdateAttendanceIsAttend(w http.ResponseWriter, r *http.Request) (in
 	err = helpers.ParseBodyRequestData(ctx, r, &param)
 	if err != nil {
 
-		return nil, helpers.ErrorWrap(err, "handler", "HandlerUpdateAttendanceIsAttend/ParseBodyRequestData",
+		return nil, helpers.ErrorWrap(err, "handler", "HandlerAttendanceUpdate/ParseBodyRequestData",
 			helpers.BadRequestMessage, http.StatusBadRequest)
 
 	}
 
 	param.ID = attendanceID
 
-	return attendanceService.UpdateIsAttend(ctx, param)
+	return attendanceService.Update(ctx, param)
+}
+
+func HandlerAttendanceListByClass(w http.ResponseWriter, r *http.Request) (interface{}, *helpers.Error) {
+	ctx := r.Context()
+
+	params := mux.Vars(r)
+
+	classID, err := uuid.FromString(params["id"])
+
+	if err != nil {
+		return nil, helpers.ErrorWrap(err, "handler", "HandlerAttendanceListByClass/parseID",
+			helpers.BadRequestMessage, http.StatusBadRequest)
+	}
+
+	var param api.AttendanceListByClassParam
+
+	err = helpers.ParseBodyRequestData(ctx, r, &param)
+	if err != nil {
+
+		return nil, helpers.ErrorWrap(err, "handler", "HandlerAttendanceListByClass/ParseBodyRequestData",
+			helpers.BadRequestMessage, http.StatusBadRequest)
+
+	}
+
+	param.ID = classID
+
+	filter, err := helpers.ParseFilter(ctx, r)
+	if err != nil {
+		return nil, helpers.ErrorWrap(err, "handler", "HandlerAttendanceListByClass/parseFilter",
+			helpers.BadRequestMessage, http.StatusBadRequest)
+	}
+	return attendanceService.ListByClass(ctx, filter, param)
 }
